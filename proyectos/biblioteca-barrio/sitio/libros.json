@@ -1,7 +1,6 @@
 {
   "biblioteca": "Biblioteca La Esquina",
   "libros": [
-    {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", "disponible": true},
     {"titulo": "La vorágine", "autor": "José Eustasio Rivera", "disponible": false},
     {"titulo": "María", "autor": "Jorge Isaacs", "disponible": true},
     {"titulo": "Delirio", "autor": "Laura Restrepo", "disponible": true},
