@@ -254,7 +254,7 @@ const PASOS = [
   <ul><li>La imagen del sitio funcionando en tu equipo.</li><li>Dos pruebas «Si hago ___, debo ver ___».</li><li>Un workflow en tu fork, con un rojo provocado, leído y arreglado.</li><li>La sección «Cómo se valida» en el README del proyecto.</li></ul>
   <div class="nota">Si nunca has programado, este es el proyecto para ti: no hay que escribir código de servidor, solo entender qué archivos sirve nginx.</div>` },
 
-{ g: 'Parte 1 · Entender', t: 'El negocio y la regla', k: ['Parte 1', 'Paso 1'], h: `
+{ g: 'Parte 1 · Entender', t: 'El negocio y la regla', k: ['Clase 3 · Ejercicio 1', 'Paso 1'], h: `
   <div class="dos"><div>
     <p>La Biblioteca La Esquina funciona en la casa de la cultura del barrio y presta libros donados. Hoy los vecinos <b>llaman por teléfono</b> para preguntar si un libro está disponible.</p>
     <p>El sitio publica el catálogo con un buscador y muestra qué libros están prestados.</p>
@@ -269,7 +269,7 @@ ${json}
 }`))}
   </div></div>` },
 
-{ g: 'Parte 1 · Entender', t: 'Qué hay en la carpeta', k: ['Parte 1', 'Paso 2'], h: `
+{ g: 'Parte 1 · Entender', t: 'Qué hay en la carpeta', k: ['Clase 3 · Ejercicio 1', 'Paso 2'], h: `
   <div class="dos"><div>
     <pre class="code">proyectos/biblioteca-barrio/
 ├── Dockerfile        <span class="c">nginx y copiar sitio/</span>
@@ -286,7 +286,7 @@ ${json}
     <div class="nota">Esta diferencia importa en el paso 6: las herramientas de línea de comandos como <code>curl</code> no ejecutan JavaScript.</div>
   </div></div>` },
 
-{ g: 'Parte 2 · Clase 3: contenedor', t: 'Lee el Dockerfile', k: ['Clase 3', 'Paso 3'], h: `
+{ g: 'Parte 2 · Clase 3 · Ejercicio 7', t: 'Lee el Dockerfile', k: ['Clase 3 · Ejercicio 7', 'Paso 3'], h: `
   <div class="dos"><div>
     ${codigo(`
 # Biblioteca La Esquina · sitio web estático
@@ -306,7 +306,7 @@ EXPOSE 80
     <div class="alerta">Recuerda el <b>80</b>: es el valor de <code>PUERTO_APP</code> en la Clase 4.</div>
   </div></div>` },
 
-{ g: 'Parte 2 · Clase 3: contenedor', t: 'Construye y enciende', k: ['Clase 3', 'Paso 4'], h: `
+{ g: 'Parte 2 · Clase 3 · Ejercicio 7', t: 'Construye y enciende', k: ['Clase 3 · Ejercicio 7', 'Paso 4'], h: `
   <div class="dos"><div>
     <p>En una terminal (en Windows, Git Bash), dentro de <code>proyectos/biblioteca-barrio</code>:</p>
     ${codigo(`
@@ -325,7 +325,7 @@ docker ps`)}
   3f9c1a2b7d40   biblioteca:0.1.0   Up 5 seconds   0.0.0.0:9000->80/tcp   biblioteca`)}
   </div></div>` },
 
-{ g: 'Parte 2 · Clase 3: contenedor', t: 'Ábrelo en el navegador', k: ['Clase 3', 'Paso 5'], fn: 'sitio', h: `
+{ g: 'Parte 2 · Clase 3 · Ejercicio 7', t: 'Ábrelo en el navegador', k: ['Clase 3 · Ejercicio 7', 'Paso 5'], fn: 'sitio', h: `
   <div class="dos"><div>
     <p>Abre <code>http://localhost:9000</code>. Esta es una vista previa con los datos reales: prueba el buscador.</p>
     ${ver(['El título «Biblioteca La Esquina» y un buscador.', 'El resumen dice «6 de 6 libros · 4 disponibles».', 'Al escribir «García» queda solo <i>Cien años de soledad</i>.'])}
@@ -337,7 +337,7 @@ docker ps`)}
       <p id="bibResumen"></p><ul id="bibLista"></ul></div></div>`)}
   </div></div>` },
 
-{ g: 'Parte 2 · Clase 3: contenedor', t: 'Escribe y comprueba tus dos pruebas', k: ['Clase 3', 'Paso 6'], h: `
+{ g: 'Parte 2 · Clase 3 · Ejercicio 7', t: 'Escribe y comprueba tus dos pruebas', k: ['Clase 3 · Ejercicio 7', 'Paso 6'], h: `
   <div class="dos"><div>
     <table><tr><th>#</th><th>Si hago…</th><th>Debo ver…</th></tr>
       <tr><td>1</td><td>Abro <code>/</code></td><td>«Biblioteca La Esquina»</td></tr>
@@ -358,7 +358,7 @@ V     {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", "
     ${resp('¿Por qué el libro no aparece al pedir <code>/</code>?', 'Porque <code>curl</code> no ejecuta JavaScript. La lista la dibuja <code>catalogo.js</code> en el navegador, después de cargar la página. De <code>/</code>, <code>curl</code> recibe el <code>index.html</code> sin libros. Los datos sí están en <code>/libros.json</code>: por eso la prueba 2 pide ese archivo.')}
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Prepara tu fork y crea el workflow', k: ['Clase 4', 'Pasos 7 y 8'], h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Prepara tu fork y crea el workflow', k: ['Clase 4 · Ejercicio 7', 'Pasos 7 y 8'], h: `
   <div class="dos"><div>
     <h2 style="margin-top:0">Si no tienes fork todavía</h2>
     <ol class="instr"><li>En <code>github.com/dlemusg/Estud-IA-Nube-Int</code>: ${b('Fork')} → ${bv('Create fork')}.</li><li>En tu fork: ${b('Actions')} → ${bv('I understand my workflows, go ahead and enable them')}.</li></ol>
@@ -383,7 +383,7 @@ on:
     <div class="nota"><b>¿Por qué <code>ci-docker.yml</code>?</b> El proyecto tiene Dockerfile, pero no tiene pruebas de código (ni pytest ni <code>npm test</code>): todo se prueba con el contenedor encendido.</div>
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Cambia lo que dice CAMBIA', k: ['Clase 4', 'Paso 9', 'Complétalo aquí'], fn: 'plantilla', h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Cambia lo que dice CAMBIA', k: ['Clase 4 · Ejercicio 7', 'Paso 9', 'Complétalo aquí'], fn: 'plantilla', h: `
   <p>Escribe en cada casilla el valor correcto para Biblioteca La Esquina. Pista: todo está en los pasos 3 y 6.</p>
   <pre class="code" id="plantilla"><span class="k">name</span>: Biblioteca La Esquina CI   <span class="c"># recomendado: así lo distingues en Actions</span>
 
@@ -407,7 +407,7 @@ on:
           grep -q "<input data-r="Cien años de soledad" aria-label="Texto de la prueba 2">" respuesta.txt</pre>
   <div class="acciones"><button class="btn prim" id="comprobar">Comprobar</button><button class="btn" id="rellenar">Mostrar la solución</button><span id="resultado"></span></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'El workflow completo', k: ['Clase 4', 'Paso 9', 'Solución'], h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'El workflow completo', k: ['Clase 4 · Ejercicio 7', 'Paso 9', 'Solución'], h: `
   <div class="dos"><div>
     ${codigo(`
 name: Biblioteca La Esquina CI
@@ -463,7 +463,7 @@ jobs:
     <div class="alerta"><b>El verde que engaña:</b> <code>curl -s</code> termina en 0 aunque la página responda 404. Sin la línea <code>grep -q</code>, la prueba queda verde con cualquier respuesta.</div>
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Commit y primera ejecución', k: ['Clase 4', 'Paso 10'], anim: 'corre', h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Commit y primera ejecución', k: ['Clase 4 · Ejercicio 7', 'Paso 10'], anim: 'corre', h: `
   <div class="dos"><div>
     <ol class="instr"><li>${bv('Commit changes')} → ${bv('Commit changes')}.</li><li>Abre ${b('Actions')} y espera alrededor de un minuto.</li></ol>
     ${ver(['<b>Biblioteca La Esquina CI</b> termina en ✓ verde.', 'En el job, el paso de logs aparece omitido (⊘).'])}
@@ -474,7 +474,7 @@ jobs:
       <div>${fila('run" id="estRun', '<b>Create biblioteca-barrio.yml</b>', 'Biblioteca La Esquina CI #1 · main · <span id="tRun">en curso…</span>')}</div></div>`)}
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Lee el log verde', k: ['Clase 4', 'Paso 10'], h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Lee el log verde', k: ['Clase 4 · Ejercicio 7', 'Paso 10'], h: `
   <div class="dos"><div>
     <p>Abre la ejecución → job <b>Imagen y prueba de humo</b>. Abre las dos pruebas: gracias a <code>tee</code>, ves exactamente lo que respondió nginx.</p>
     ${ver(['Todos los pasos con ✓.', 'En la prueba 2 aparece la línea de <i>Cien años de soledad</i>.'])}
@@ -493,7 +493,7 @@ V     {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", .
 ~ ⊘ Logs del contenedor (si algo falló)`)}
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Provoca un rojo: borra un libro', k: ['Clase 4', 'Paso 11'], h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Provoca un rojo: borra un libro', k: ['Clase 4 · Ejercicio 7', 'Paso 11'], h: `
   <div class="dos"><div>
     <ol class="instr"><li>En tu fork abre <code>proyectos/biblioteca-barrio/sitio/libros.json</code> → lápiz ✏️.</li><li>Borra la línea de <i>Cien años de soledad</i>.</li><li>Haz commit.</li></ol>
     ${codigo(`
@@ -523,7 +523,7 @@ R       {"titulo": "La vorágine", "autor": "José Eustasio Rivera", ...},
       <tr><td>¿Entorno o comportamiento?</td><td><b>Comportamiento</b>: respondió, pero sin el contenido esperado</td></tr></table>`)}
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Un segundo rojo: el puerto equivocado', k: ['Clase 4', 'Paso 12'], h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Un segundo rojo: el puerto equivocado', k: ['Clase 4 · Ejercicio 7', 'Paso 12'], h: `
   <div class="dos"><div>
     <ol class="instr"><li>Deshaz el cambio de <code>libros.json</code>.</li><li>En el workflow cambia el puerto y haz commit:</li></ol>
     ${codigo(`
@@ -549,7 +549,7 @@ R   La aplicación no respondió en 30 segundos
 ~   ... nginx/1.27 ... start worker processes`)}
   </div></div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: '¿Entorno o comportamiento?', k: ['Clase 4', 'Clasifica'], fn: 'votos', h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: '¿Entorno o comportamiento?', k: ['Clase 4 · Ejercicio 7', 'Clasifica'], fn: 'votos', h: `
   <p>Vota en cada log: <b>E</b> si faltaba algo para poder correr o alcanzar el sitio (entorno), <b>C</b> si el sitio respondió pero distinto de lo esperado (comportamiento).</p>
   <div class="tarjetas">
     ${[
@@ -560,7 +560,7 @@ R   La aplicación no respondió en 30 segundos
       <div class="votos"><button class="btn" data-v="E">E · entorno</button><button class="btn" data-v="C">C · comportamiento</button></div><div class="fb"></div></div>`).join('')}
   </div>` },
 
-{ g: 'Parte 3 · Clase 4: CI', t: 'Arregla y guarda la evidencia', k: ['Clase 4', 'Paso 13'], h: `
+{ g: 'Parte 3 · Clase 4 · Ejercicio 7', t: 'Arregla y guarda la evidencia', k: ['Clase 4 · Ejercicio 7', 'Paso 13'], h: `
   <div class="dos"><div>
     <ol class="instr"><li>Deja <code>PUERTO_APP: "80"</code> y haz commit.</li><li>Copia en tus notas el enlace de una ejecución roja (la del libro borrado) y el de la verde.</li></ol>
     ${ver(['La ejecución nueva termina en ✓ verde.', 'Tengo los dos enlaces: son mi evidencia.'])}
@@ -573,7 +573,7 @@ R   La aplicación no respondió en 30 segundos
       ${fila('ok', '<b>Create biblioteca-barrio.yml</b>', 'Biblioteca La Esquina CI #1')}`)}
   </div></div>` },
 
-{ g: 'Parte 4 · Cierre', t: 'Reto: prueba la regla del negocio', k: ['Reto opcional', 'Paso 14'], h: `
+{ g: 'Parte 4 · Cierre', t: 'Reto: prueba la regla del negocio', k: ['Reto opcional', 'Clase 4 · Ejercicio 7', 'Paso 14'], h: `
   <div class="dos"><div>
     <p>Las dos pruebas confirman que el sitio responde y que un libro existe, pero <b>ninguna revisa la regla</b>: si alguien cambia <i>La vorágine</i> a <code>"disponible": true</code>, todo sigue en verde.</p>
     <p>Agrega esta prueba después de la prueba 2:</p>
@@ -591,7 +591,7 @@ R   La aplicación no respondió en 30 segundos
     ${ver(['Con <code>true</code>, la prueba 3 queda en rojo.', 'Al deshacerlo, vuelve a verde.'])}
   </div></div>` },
 
-{ g: 'Parte 4 · Cierre', t: 'Escribe «Cómo se valida» en el README', k: ['Cierre', 'Paso 15'], h: `
+{ g: 'Parte 4 · Cierre', t: 'Escribe «Cómo se valida» en el README', k: ['Clase 4 · Ejercicio 7', 'Paso 15'], h: `
   <div class="dos"><div>
     <p>En <code>proyectos/biblioteca-barrio/README.md</code> de tu fork. Esta sección le dice a cualquiera qué protege tu workflow y qué no.</p>
     <div class="nota">Si hiciste el reto, agrega la prueba 3 a la lista y quita la marca de «Prestado» de lo que todavía no se valida.</div>
@@ -618,7 +618,7 @@ se marquen como «Prestado» y que el sitio esté
 publicado en internet.`)}
   </div></div>` },
 
-{ g: 'Parte 4 · Cierre', t: '¿Qué te protege? Revisión en parejas', k: ['Cierre', 'Paso 16', 'Parejas'], h: `
+{ g: 'Parte 4 · Cierre', t: '¿Qué te protege? Revisión en parejas', k: ['Clase 4 · Ejercicio 8', 'Paso 16', 'Parejas'], h: `
   <div class="flujo">
     <div class="caja"><b>1 · Compartes</b><small>fork y última ejecución verde, sin explicar</small></div><span class="flecha">→</span>
     <div class="caja"><b>2 · Tu pareja lee</b><small>el workflow y el log</small></div><span class="flecha">→</span>
@@ -677,7 +677,7 @@ function ir(i) {
     <div class="kicker">${p.k.map((c, j) => `<span class="chip ${j === 0 ? 'ej' : ''}">${c}</span>`).join('')}</div>
     <h1>${p.t}</h1>${p.h}</article>`;
   escena.scrollTop = 0;
-  $('#contador').textContent = `Paso ${actual + 1} de ${PASOS.length}`;
+  $('#contador').textContent = `Pantalla ${actual + 1} de ${PASOS.length}`;
   $('#barra').style.width = `${((actual + 1) / PASOS.length) * 100}%`;
   $('#ant').disabled = actual === 0;
   $('#sig').textContent = actual === PASOS.length - 1 ? 'Fin ✓' : 'Siguiente →';

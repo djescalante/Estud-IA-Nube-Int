@@ -686,7 +686,7 @@ function ir(i) {
     <div class="kicker">${p.k.map((c, j) => `<span class="chip ${j === 0 ? 'ej' : ''}">${c}</span>`).join('')}</div>
     <h1>${p.t}</h1>${p.h}</article>`;
   escena.scrollTop = 0;
-  $('#contador').textContent = `Paso ${actual + 1} de ${PASOS.length}`;
+  $('#contador').textContent = `Pantalla ${actual + 1} de ${PASOS.length}`;
   $('#barra').style.width = `${((actual + 1) / PASOS.length) * 100}%`;
   $('#ant').disabled = actual === 0;
   $('#sig').textContent = actual === PASOS.length - 1 ? 'Fin ✓' : 'Siguiente →';

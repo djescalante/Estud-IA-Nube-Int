@@ -17,7 +17,7 @@ que todo vuelve a verde.
 | 01 | `app/app.py` | En la línea de `DIAS_VIGENCIA`, cambia `"90"` por `"900"` |
 | 02 | `app/requirements.txt` | Borra la línea `Flask==3.1.3` |
 | 03 | `Dockerfile` | En la última línea, cambia `0.0.0.0` por `127.0.0.1` |
-| 04 | `.github/workflows/clase-04-villa-nube.yml` | Haz la falla 01 y además cambia `run: pytest -v` por `run: pytest -v \|\| true` |
+| 04 | `.github/workflows/clase-04-villa-nube.yml` | Haz la falla 01 y además cambia `run: pytest -v` por <code>run: pytest -v &#124;&#124; true</code> |
 
 La falla 04 es distinta: mira el color del resultado y lee el log completo.
 ¿Qué te dice eso de un check verde?

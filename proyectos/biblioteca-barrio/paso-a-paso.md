@@ -15,12 +15,16 @@ flowchart LR
   D --> E[README<br/>Cómo se valida]
 ```
 
-| Fase | Pasos | Te llevas |
-| --- | --- | --- |
-| Entender el proyecto | 1–2 | El negocio, la regla y qué hace cada archivo |
-| Clase 3 · Contenedor | 3–6 | La imagen funcionando y dos pruebas «Si hago ___, debo ver ___» |
-| Clase 4 · Integración continua | 7–13 | Un workflow en verde, dos rojos provocados y leídos, y el arreglo |
-| Cierre | 14–17 | Un reto opcional, la sección «Cómo se valida» y la revisión en parejas |
+Los **pasos** de este documento van del 1 al 17 y son propios del proyecto. La columna «Ejercicio de la clase» dice a qué ejercicio del README de cada clase corresponden. Cada clase numera sus ejercicios del 1 al 9, así que el «Ejercicio 7» de la Clase 3 y el de la Clase 4 son distintos.
+
+| Pasos de este documento | Fase | Ejercicio de la clase | Te llevas |
+| --- | --- | --- | --- |
+| 1–2 | Entender el proyecto | Clase 3 · Ejercicio 1 | El negocio, la regla y qué hace cada archivo |
+| 3–6 | Contenedor | [Clase 3 · Ejercicio 7 · Tu proyecto en un contenedor](../../clases/clase-03/README.md#ejercicio-7--tu-proyecto-en-un-contenedor) | La imagen funcionando y dos pruebas «Si hago ___, debo ver ___» |
+| 7–13 | Integración continua | [Clase 4 · Ejercicio 7 · Tu proyecto con CI](../../clases/clase-04/README.md#ejercicio-7--tu-proyecto-con-ci), pasos 0 a 5 | Un workflow en verde, dos rojos provocados y leídos, y el arreglo |
+| 14–15 | Reto y README | Clase 4 · Ejercicio 7, paso 6, y retos opcionales | La sección «Cómo se valida» |
+| 16 | Revisión en parejas | [Clase 4 · Ejercicio 8 · ¿Qué te protege?](../../clases/clase-04/README.md#ejercicio-8--qué-te-protege) | La revisión de otra persona |
+| 17 | Lo que le falta | Clase 4 · Ejercicio 9 | Qué queda para las próximas clases |
 
 ---
 
@@ -57,6 +61,9 @@ No hay código de servidor: nginx entrega los archivos tal como están. El JavaS
 ---
 
 ## Parte 2 · Clase 3 · Del proyecto al contenedor
+
+> [!NOTE]
+> Esta parte es el **Ejercicio 7 de la Clase 3** («Tu proyecto en un contenedor»). El paso 6 usa las dos pruebas que se escriben en el Ejercicio 1 de esa clase.
 
 ### Paso 3 · Lee el Dockerfile
 
@@ -131,6 +138,9 @@ docker rm -f biblioteca
 ---
 
 ## Parte 3 · Clase 4 · Integración continua
+
+> [!NOTE]
+> Esta parte es el **Ejercicio 7 de la Clase 4** («Tu proyecto con CI»). Equivalencias: pasos 7 y 8 = pasos 0 a 2 del ejercicio · paso 9 = paso 3 · paso 10 = paso 4 · pasos 11 a 13 = paso 5 · paso 15 = paso 6.
 
 ### Paso 7 · Prepara tu fork
 

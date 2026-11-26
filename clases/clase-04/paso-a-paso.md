@@ -289,7 +289,7 @@ Escribe tu predicción **antes** de abrir la respuesta.
 | Pregunta | Mi predicción |
 | --- | --- |
 | Si «Pruebas del código» falla, ¿corre «Imagen y prueba de humo»? | |
-| Cambio `run: pytest -v` por `run: pytest -v \|\| true` y rompo la regla. ¿De qué color queda? | |
+| Cambio `run: pytest -v` por <code>run: pytest -v &#124;&#124; true</code> y rompo la regla. ¿De qué color queda? | |
 | Cambio solo el README de la raíz. ¿Corre el workflow de Villa Nube? | |
 | El workflow quedó en verde. ¿Villa Nube ya está publicada en internet? | |
 
@@ -299,7 +299,7 @@ Escribe tu predicción **antes** de abrir la respuesta.
 | Pregunta | Lo que pasa |
 | --- | --- |
 | ¿Corre la imagen si las pruebas fallan? | **No.** Se omite por `needs: pruebas` |
-| `pytest -v \|\| true` con la regla rota | **Verde, y engaña.** El log dice `1 failed`, pero `\|\| true` hace que el paso termine en 0. La prueba de humo también pasa: usa un documento de 2020, que sigue vencido aun con 900 días. Ver [`5-verde-enganoso.txt`](villa-nube/ci/logs/5-verde-enganoso.txt) |
+| <code>pytest -v &#124;&#124; true</code> con la regla rota | **Verde, y engaña.** El log dice `1 failed`, pero <code>&#124;&#124; true</code> hace que el paso termine en 0. La prueba de humo también pasa: usa un documento de 2020, que sigue vencido aun con 900 días. Ver [`5-verde-enganoso.txt`](villa-nube/ci/logs/5-verde-enganoso.txt) |
 | Solo el README de la raíz | **No corre.** El filtro `paths` solo mira `clases/clase-04/villa-nube/**` y el propio workflow |
 | ¿Verde = publicada? | **No.** La imagen se construyó y se probó en el runner, que se borra al terminar. Publicar y desplegar llega en las clases siguientes |
 

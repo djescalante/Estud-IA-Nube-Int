@@ -2,6 +2,20 @@
 
 Del draft al contenedor · Nube Intermedio · Semana 2. **No necesitas experiencia previa con Docker: vamos paso a paso.**
 
+**Los ejercicios de la Clase 3** (cada clase numera sus ejercicios del 1 al 9: el «Ejercicio 7» de la Clase 3 no es el mismo de la Clase 4)
+
+| # | Ejercicio | Modo | Tiempo |
+| --- | --- | --- | --- |
+| **1** | [¿Qué vas a empaquetar y cómo sabrás que funciona?](#ejercicio-1--qué-vas-a-empaquetar-y-cómo-sabrás-que-funciona) | En parejas · apertura | 5 min |
+| **2** | [Sigue conmigo: tus primeros contenedores](#ejercicio-2--sigue-conmigo-tus-primeros-contenedores) | Individual, al mismo tiempo que el profesor | 10 min |
+| **3** | [Construye y enciende Villa Nube](#ejercicio-3--construye-y-enciende-villa-nube) | En equipo · práctica guiada, parte A | 15 min |
+| **4** | [Completa el Dockerfile](#ejercicio-4--completa-el-dockerfile) | En equipo · práctica guiada, parte B | 15 min |
+| **5** | [¿Adentro o afuera?](#ejercicio-5--adentro-o-afuera) | Votación en el chat | 3 min |
+| **6** | [Predice antes de ver](#ejercicio-6--predice-antes-de-ver) | Individual · durante la explicación | 5 min |
+| **7** | [Tu proyecto en un contenedor](#ejercicio-7--tu-proyecto-en-un-contenedor) | Individual o con tu equipo de proyecto | 45 min |
+| **8** | [Arranque a ciegas](#ejercicio-8--arranque-a-ciegas) | En parejas | 25 min |
+| **9** | [Exit ticket y preparación para la Clase 4](#ejercicio-9--exit-ticket-y-preparación-para-la-clase-4) | Individual | 5 min |
+
 ## Antes de empezar
 
 Hoy una parte de tu proyecto queda dentro de un contenedor: algo que cualquier persona puede encender igual en su computador. Al final, un compañero la va a encender siguiendo solo tus instrucciones.

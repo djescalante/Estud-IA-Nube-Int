@@ -2,6 +2,20 @@
 
 Integración continua y validación de cambios · Nube Intermedio · Semana 2. No necesitas experiencia previa con GitHub Actions: vamos paso a paso y casi todo se hace en el navegador.
 
+**Los ejercicios de la Clase 4** (cada clase numera sus ejercicios del 1 al 9: el «Ejercicio 7» de la Clase 3 no es el mismo de la Clase 4)
+
+| # | Ejercicio | Modo | Tiempo |
+| --- | --- | --- | --- |
+| **1** | [¿Qué debería revisar la máquina?](#ejercicio-1--qué-debería-revisar-la-máquina) | En parejas · apertura | 5 min |
+| **2** | [Sigue conmigo: tu primera ejecución](#ejercicio-2--sigue-conmigo-tu-primera-ejecución) | Individual, al mismo tiempo que el profesor | 10 min |
+| **3** | [Rompe y arregla](#ejercicio-3--rompe-y-arregla) | En equipo · práctica guiada, parte A | 15 min |
+| **4** | [Completa el workflow](#ejercicio-4--completa-el-workflow) | En equipo · práctica guiada, parte B | 15 min |
+| **5** | [¿Entorno o comportamiento?](#ejercicio-5--entorno-o-comportamiento) | Votación en el chat | 4 min |
+| **6** | [Predice antes de ver](#ejercicio-6--predice-antes-de-ver) | Individual · durante la explicación | 6 min |
+| **7** | [Tu proyecto con CI](#ejercicio-7--tu-proyecto-con-ci) | Individual o con tu equipo de proyecto | 45 min |
+| **8** | [¿Qué te protege?](#ejercicio-8--qué-te-protege) | En parejas | 25 min |
+| **9** | [Exit ticket y preparación para la Clase 5](#ejercicio-9--exit-ticket-y-preparación-para-la-clase-5) | Individual | 5 min |
+
 ## Antes de empezar
 
 En la Clase 3 un compañero encendió tu proyecto siguiendo tu README. Hoy ese trabajo lo hace una máquina: cada vez que cambias el código, GitHub construye tu proyecto, lo enciende y corre tus pruebas. Si algo se rompe, te avisa con un check rojo y un log que dice dónde.
@@ -199,7 +213,7 @@ jobs:
 | Pregunta | Mi predicción | Lo que pasó |
 | --- | --- | --- |
 | Si el job «Pruebas del código» falla, ¿corre el job «Imagen y prueba de humo»? | | |
-| Cambio `run: pytest -v` por `run: pytest -v \|\| true` y rompo la regla. ¿De qué color queda? | | |
+| Cambio `run: pytest -v` por <code>run: pytest -v &#124;&#124; true</code> y rompo la regla. ¿De qué color queda? | | |
 | Cambio solo el README de la raíz del repositorio. ¿Corre el workflow de Villa Nube? | | |
 | El workflow quedó en verde. ¿Villa Nube ya está publicada en internet? | | |
 
@@ -340,7 +354,7 @@ En la Clase 5 la infraestructura también se describe en archivos, para que se p
 | La prueba de humo da `000` | La app no responde: revisa el puerto (`PUERTO_APP`) y que escuche en `0.0.0.0` |
 | La prueba de humo falla en `grep` | La app responde, pero no con el texto que pusiste: abre el log y mira qué respondió |
 | El job se queda en amarillo mucho tiempo | Espera; si pasan más de 10 minutos, cancélalo y vuelve a correrlo |
-| Verde, pero sé que algo está roto | Busca `\|\| true` o `continue-on-error`, o un paso que no corre |
+| Verde, pero sé que algo está roto | Busca <code>&#124;&#124; true</code> o `continue-on-error`, o un paso que no corre |
 
 **Retos opcionales, si terminas antes**
 
