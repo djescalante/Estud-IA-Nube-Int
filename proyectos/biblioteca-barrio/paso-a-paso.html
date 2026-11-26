@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biblioteca La Esquina · Paso a paso · Del contenedor a la integración continua</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --ink: #1d2433; --muted: #5d6677; --line: #dcd8cf;
+    --accent: #0f6e6e; --accent-soft: #dff0ee; --ok: #1a7f37; --ok-soft: #e3f4e7;
+    --bad: #c0362c; --bad-soft: #fbe6e3; --warn: #9a6700; --warn-soft: #fbf0d4;
+    --skip: #8a8f98; --term: #161b22; --term-ink: #d6dde6; --code: #f3f1ec;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1a1f27; --ink: #e6e9ee; --muted: #9aa3b2; --line: #2c333f;
+      --accent: #4fb8b0; --accent-soft: #1b3533; --ok: #4ac26b; --ok-soft: #173123;
+      --bad: #f0776c; --bad-soft: #3a1f1d; --warn: #e0b341; --warn-soft: #352b14;
+      --skip: #7d8590; --term: #0b0e13; --code: #151a21;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--sans); display: grid; grid-template-rows: auto 1fr auto; }
+  code, pre, kbd { font-family: var(--mono); font-size: .9em; }
+  code { background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3em; }
+
+  /* Cabecera */
+  header { display: flex; align-items: center; gap: 1rem; padding: .8rem 1.4rem; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header .marca { font-weight: 700; letter-spacing: .01em; }
+  header .marca small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+  header .progreso { flex: 1; height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  header .progreso i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s ease; }
+  header .contador { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; white-space: nowrap; }
+  header button.menu { display: none; }
+
+  /* Cuerpo */
+  .cuerpo { display: grid; grid-template-columns: 290px 1fr; min-height: 0; }
+  nav { border-right: 1px solid var(--line); overflow-y: auto; padding: .8rem 0 2rem; background: var(--panel); }
+  nav h3 { margin: 1rem 1.2rem .3rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  nav a { display: flex; gap: .6rem; align-items: baseline; padding: .32rem 1.2rem; color: var(--ink); text-decoration: none; font-size: .9rem; border-left: 3px solid transparent; }
+  nav a span.n { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.4rem; font-size: .8rem; }
+  nav a:hover { background: var(--accent-soft); }
+  nav a.activo { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  nav a.visto span.n::after { content: " ✓"; color: var(--ok); }
+
+  main { overflow-y: auto; padding: 2rem clamp(1rem, 4vw, 3.5rem) 3rem; }
+  .paso { max-width: 980px; margin: 0 auto; animation: entra .25s ease; }
+  @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .kicker { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .4rem; }
+  .chip { font-size: .78rem; padding: .1rem .55rem; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+  .chip.ej { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  h1 { font-size: clamp(1.5rem, 2.6vw, 2.1rem); line-height: 1.2; margin: .2rem 0 1rem; }
+  h2 { font-size: 1.1rem; margin: 1.6rem 0 .5rem; }
+  .dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 1.6rem; align-items: start; }
+  .dos > * { min-width: 0; }
+  ol.instr { padding-left: 1.3rem; margin: 0; }
+  ol.instr li { margin: .35rem 0; }
+  .boton-gh { display: inline-block; font-size: .85em; padding: .05rem .5rem; border-radius: 6px; border: 1px solid var(--line); background: var(--code); font-weight: 600; white-space: nowrap; }
+  .boton-gh.verde { background: var(--ok); color: #fff; border-color: var(--ok); }
+
+  .ver { margin-top: 1.2rem; border: 1px solid var(--ok); background: var(--ok-soft); border-radius: 10px; padding: .7rem 1rem; }
+  .ver b { color: var(--ok); }
+  .ver ul { margin: .3rem 0 0; padding-left: 0; list-style: none; }
+  .ver li::before { content: "☐ "; color: var(--ok); }
+  .ver li.hecho::before { content: "☑ "; }
+  .ver li { cursor: pointer; }
+  .nota { margin-top: 1rem; border-left: 4px solid var(--accent); background: var(--accent-soft); padding: .6rem 1rem; border-radius: 0 8px 8px 0; }
+  .alerta { margin-top: 1rem; border-left: 4px solid var(--warn); background: var(--warn-soft); padding: .6rem 1rem; border-radius: 0 8px 8px 0; }
+
+  details.resp { margin-top: 1.2rem; border: 1px dashed var(--accent); border-radius: 10px; padding: .2rem 1rem; background: var(--panel); }
+  details.resp summary { cursor: pointer; font-weight: 600; color: var(--accent); padding: .5rem 0; }
+  details.resp[open] { border-style: solid; }
+
+  table { border-collapse: collapse; width: 100%; margin: .6rem 0; font-size: .93rem; background: var(--panel); }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--code); font-weight: 600; }
+
+  /* Pantallas simuladas */
+  .pantalla { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); box-shadow: 0 6px 24px rgba(0,0,0,.07); }
+  .barra { display: flex; align-items: center; gap: .5rem; padding: .45rem .7rem; background: var(--code); border-bottom: 1px solid var(--line); }
+  .barra .pts { display: flex; gap: 5px; }
+  .barra .pts i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+  .barra .url { flex: 1; font: .78rem var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: .15rem .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabs { display: flex; gap: 1.1rem; padding: .5rem 1rem 0; border-bottom: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+  .tabs span { padding-bottom: .45rem; }
+  .tabs span.on { color: var(--ink); border-bottom: 2px solid var(--bad); font-weight: 600; }
+  .contenido { padding: 1rem; font-size: .9rem; }
+  .fila { display: flex; align-items: center; gap: .6rem; padding: .55rem .2rem; border-bottom: 1px solid var(--line); }
+  .fila:last-child { border-bottom: 0; }
+  .fila .t { flex: 1; min-width: 0; }
+  .fila .t small { display: block; color: var(--muted); font-size: .78rem; }
+  .est { width: 18px; height: 18px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 11px; color: #fff; font-weight: 700; }
+  .est.ok { background: var(--ok); } .est.ok::after { content: "✓"; }
+  .est.bad { background: var(--bad); } .est.bad::after { content: "✕"; }
+  .est.skip { background: transparent; border: 2px solid var(--skip); } .est.skip::after { content: "⊘"; color: var(--skip); font-size: 12px; }
+  .est.run { border: 3px solid var(--warn); border-top-color: transparent; animation: gira 1s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .resalta { outline: 3px solid var(--warn); outline-offset: 3px; border-radius: 6px; animation: pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 50% { outline-color: transparent; } }
+  .lado { display: grid; grid-template-columns: 200px 1fr; gap: 1rem; }
+  .lado .lista div { padding: .3rem .5rem; border-radius: 6px; font-size: .85rem; }
+  .lado .lista div.on { background: var(--accent-soft); font-weight: 600; }
+  .menu-gh { border: 1px solid var(--line); border-radius: 8px; padding: .7rem; background: var(--panel); box-shadow: 0 6px 18px rgba(0,0,0,.12); max-width: 260px; margin-left: auto; font-size: .85rem; }
+
+  /* Terminal / log */
+  pre.term { margin: 0; background: var(--term); color: var(--term-ink); padding: .9rem 1rem; font-size: .78rem; line-height: 1.5; overflow-x: auto; border-radius: 0; }
+  .pantalla > pre.term { border-radius: 0; }
+  pre.term .ok { color: #56d364; } pre.term .bad { color: #ff7b72; } pre.term .dim { color: #7d8590; }
+  pre.term .hl { background: rgba(255,123,114,.18); display: inline-block; width: 100%; }
+  pre.term .hlok { background: rgba(86,211,100,.14); display: inline-block; width: 100%; }
+  pre.code { margin: 0; background: var(--code); padding: .9rem 1rem; font-size: .8rem; line-height: 1.55; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  pre.code .c { color: var(--muted); font-style: italic; }
+  pre.code .k { color: var(--accent); font-weight: 600; }
+  pre.code .del { background: var(--bad-soft); color: var(--bad); display: inline-block; width: 100%; }
+  pre.code .add { background: var(--ok-soft); color: var(--ok); display: inline-block; width: 100%; }
+  pre.code input { font: inherit; width: 11.5em; padding: 0 .3em; border: 1px dashed var(--accent); background: var(--panel); color: var(--ink); border-radius: 4px; }
+  pre.code input.bien { border: 1px solid var(--ok); background: var(--ok-soft); }
+  pre.code input.mal { border: 1px solid var(--bad); background: var(--bad-soft); }
+  .banco { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 1rem; }
+  .banco code { cursor: grab; }
+  .acciones { display: flex; gap: .6rem; margin-top: .8rem; flex-wrap: wrap; align-items: center; }
+  .btn { font: inherit; font-size: .9rem; padding: .45rem .95rem; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.prim { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  /* Diagrama de pipeline */
+  .flujo { display: flex; align-items: stretch; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .caja { flex: 1 1 140px; border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; background: var(--panel); font-size: .88rem; }
+  .caja b { display: block; margin-bottom: .2rem; }
+  .caja small { color: var(--muted); }
+  .caja.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .caja.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .caja.skip { border-style: dashed; color: var(--muted); }
+  .flecha { align-self: center; color: var(--muted); font-size: 1.2rem; }
+
+  /* Tarjetas de votación */
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .9rem; margin-top: 1rem; }
+  .tarjeta { border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; background: var(--panel); }
+  .tarjeta pre { margin: .3rem 0 .6rem; white-space: pre-wrap; font-size: .8rem; background: var(--term); color: var(--term-ink); padding: .5rem .6rem; border-radius: 6px; }
+  .tarjeta .votos { display: flex; gap: .4rem; }
+  .tarjeta .fb { margin-top: .5rem; font-size: .88rem; min-height: 1.3em; }
+  .tarjeta.ok { border-color: var(--ok); } .tarjeta.no { border-color: var(--bad); }
+
+  footer { display: flex; align-items: center; gap: .8rem; padding: .7rem 1.4rem; border-top: 1px solid var(--line); background: var(--panel); }
+  footer .ayuda { flex: 1; color: var(--muted); font-size: .82rem; }
+  footer kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 .35em; background: var(--code); }
+
+  @media (max-width: 860px) {
+    .cuerpo { grid-template-columns: 1fr; }
+    nav { display: none; position: fixed; inset: 56px 0 58px 0; z-index: 5; }
+    body.ver-menu nav { display: block; }
+    header button.menu { display: inline-block; }
+    .dos, .lado { grid-template-columns: 1fr; }
+    footer .ayuda { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* Vista previa del sitio de la biblioteca (mismos colores que sitio/estilos.css) */
+  .bib { font-family: Arial, sans-serif; color: #2b2b2b; background: #f2f2f2; margin: -1rem; }
+  .bib-cab { background: #000; color: #fff; padding: 16px 18px; }
+  .bib-cab b { display: block; color: #ff7c1a; font-size: 1.35rem; margin-bottom: 4px; }
+  .bib-cab small { font-size: .82rem; }
+  .bib-cuerpo { padding: 12px 16px 6px; }
+  .bib label { font-size: .85rem; }
+  .bib input { width: 100%; padding: 8px; font-size: 15px; margin: 6px 0 8px; box-sizing: border-box; border: 1px solid #bbb; background: #fff; color: #2b2b2b; }
+  .bib p { margin: 4px 0 8px; font-size: .85rem; }
+  .bib ul { list-style: none; padding: 0; margin: 0; }
+  .bib li { background: #fff; margin-bottom: 6px; padding: 8px 12px; border-left: 6px solid #ff7c1a; font-size: .88rem; }
+  .bib li.prestado { border-left-color: #cb318e; }
+  .bib .estado { float: right; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <button class="btn menu" id="btnMenu" aria-label="Ver los pasos">☰</button>
+  <div class="marca">Biblioteca La Esquina<small>Proyecto de práctica · paso a paso</small></div>
+  <div class="progreso" aria-hidden="true"><i id="barra"></i></div>
+  <div class="contador" id="contador"></div>
+</header>
+<div class="cuerpo">
+  <nav id="indice" aria-label="Pasos de la clase"></nav>
+  <main id="escena" tabindex="-1" aria-live="polite"></main>
+</div>
+<footer>
+  <button class="btn" id="ant">← Anterior</button>
+  <span class="ayuda">Usa <kbd>←</kbd> y <kbd>→</kbd> del teclado. Haz clic en cada «☐» cuando lo veas en tu pantalla.</span>
+  <button class="btn prim" id="sig">Siguiente →</button>
+</footer>
+
+<script>
+// Expresiones de GitHub: van en comillas normales para que JavaScript no las interprete
+const SHA = '${{ github.sha }}';
+
+// ---------- Ayudas para dibujar ----------
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const navegador = (url, tabs, cuerpo) => `
+  <div class="pantalla">
+    <div class="barra"><span class="pts"><i></i><i></i><i></i></span><span class="url">${url}</span></div>
+    ${tabs ? `<div class="tabs">${['Code','Issues','Pull requests','Actions','Settings'].map(t => `<span class="${t === tabs ? 'on' : ''}">${t}</span>`).join('')}</div>` : ''}
+    <div class="contenido">${cuerpo}</div>
+  </div>`;
+// Log: cada línea puede empezar con un marcador: "+" verde, "!" rojo, "~" gris, "R" resaltada roja, "V" resaltada verde
+const log = (titulo, lineas) => `
+  <div class="pantalla">
+    <div class="barra"><span class="pts"><i></i><i></i><i></i></span><span class="url">${titulo}</span></div>
+    <pre class="term">${lineas.trim().split('\n').map(l => {
+      const m = l[0], r = esc(l.slice(2));
+      return m === '+' ? `<span class="ok">${r}</span>` : m === '!' ? `<span class="bad">${r}</span>` :
+             m === '~' ? `<span class="dim">${r}</span>` : m === 'R' ? `<span class="hl">${r}</span>` :
+             m === 'V' ? `<span class="hlok">${r}</span>` : esc(l.slice(2));
+    }).join('\n')}</pre>
+  </div>`;
+// Código: "#" comentario, "-" línea borrada, "+" línea agregada
+const codigo = txt => `<pre class="code">${txt.replace(/^\n/, '').replace(/\n\s*$/, '').split('\n').map(l => {
+  if (l.startsWith('- ')) return `<span class="del">${esc(l)}</span>`;
+  if (l.startsWith('+ ')) return `<span class="add">${esc(l)}</span>`;
+  const i = l.indexOf('#');
+  if (i >= 0 && l.trim().startsWith('#')) return `<span class="c">${esc(l)}</span>`;
+  return esc(l).replace(/^(\s*-?\s*)([a-z_-]+):/i, '$1<span class="k">$2</span>:');
+}).join('\n')}</pre>`;
+const ver = items => `<div class="ver"><b>Debes ver</b><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+const resp = (titulo, html) => `<details class="resp"><summary>▸ ${titulo}</summary>${html}</details>`;
+const fila = (est, titulo, sub) => `<div class="fila"><span class="est ${est}"></span><div class="t">${titulo}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
+const b = t => `<span class="boton-gh">${t}</span>`;
+const bv = t => `<span class="boton-gh verde">${t}</span>`;
+
+// ---------- Los pasos ----------
+const PUERTO = '${{ env.PUERTO_APP }}';
+const LIBROS = [
+  { titulo: 'Cien años de soledad', autor: 'Gabriel García Márquez', disponible: true },
+  { titulo: 'La vorágine', autor: 'José Eustasio Rivera', disponible: false },
+  { titulo: 'María', autor: 'Jorge Isaacs', disponible: true },
+  { titulo: 'Delirio', autor: 'Laura Restrepo', disponible: true },
+  { titulo: 'El olvido que seremos', autor: 'Héctor Abad Faciolince', disponible: false },
+  { titulo: 'La virgen de los sicarios', autor: 'Fernando Vallejo', disponible: true },
+];
+const json = LIBROS.map(l => `    {"titulo": "${l.titulo}", "autor": "${l.autor}", "disponible": ${l.disponible}},`).join('\n').replace(/,$/, '');
+
+const PASOS = [
+{ g: 'Inicio', t: 'Biblioteca La Esquina, de principio a fin', k: ['Proyecto de práctica', 'HTML · CSS · JS · nginx'], h: `
+  <p>Vas a llevar un sitio web pequeño desde «son unos archivos en una carpeta» hasta «cada cambio se prueba solo en GitHub». Es el mismo camino de las Clases 3 y 4, con un proyecto que no tiene código de servidor.</p>
+  <div class="flujo">
+    <div class="caja"><b>Entender</b><small>negocio, regla y archivos</small></div><span class="flecha">→</span>
+    <div class="caja"><b>Clase 3</b><small>imagen y dos pruebas</small></div><span class="flecha">→</span>
+    <div class="caja"><b>Clase 4</b><small>workflow en verde</small></div><span class="flecha">→</span>
+    <div class="caja bad"><b>Rojo a propósito</b><small>leerlo y arreglarlo</small></div><span class="flecha">→</span>
+    <div class="caja ok"><b>README</b><small>«Cómo se valida»</small></div>
+  </div>
+  <h2>Te llevas</h2>
+  <ul><li>La imagen del sitio funcionando en tu equipo.</li><li>Dos pruebas «Si hago ___, debo ver ___».</li><li>Un workflow en tu fork, con un rojo provocado, leído y arreglado.</li><li>La sección «Cómo se valida» en el README del proyecto.</li></ul>
+  <div class="nota">Si nunca has programado, este es el proyecto para ti: no hay que escribir código de servidor, solo entender qué archivos sirve nginx.</div>` },
+
+{ g: 'Parte 1 · Entender', t: 'El negocio y la regla', k: ['Parte 1', 'Paso 1'], h: `
+  <div class="dos"><div>
+    <p>La Biblioteca La Esquina funciona en la casa de la cultura del barrio y presta libros donados. Hoy los vecinos <b>llaman por teléfono</b> para preguntar si un libro está disponible.</p>
+    <p>El sitio publica el catálogo con un buscador y muestra qué libros están prestados.</p>
+    <div class="nota"><b>La regla del negocio vive en los datos:</b> un libro con <code>"disponible": false</code> se muestra como «Prestado».</div>
+    ${resp('¿Qué libros salen como «Prestado»?', '<i>La vorágine</i> y <i>El olvido que seremos</i>: son los dos con <code>"disponible": false</code>.')}
+  </div><div>
+    ${navegador('proyectos/biblioteca-barrio/sitio/libros.json', '', codigo(`{
+  "biblioteca": "Biblioteca La Esquina",
+  "libros": [
+${json}
+  ]
+}`))}
+  </div></div>` },
+
+{ g: 'Parte 1 · Entender', t: 'Qué hay en la carpeta', k: ['Parte 1', 'Paso 2'], h: `
+  <div class="dos"><div>
+    <pre class="code">proyectos/biblioteca-barrio/
+├── Dockerfile        <span class="c">nginx y copiar sitio/</span>
+├── .dockerignore     <span class="c">deja fuera .git y los .md</span>
+└── sitio/
+    ├── index.html    <span class="c">la página</span>
+    ├── estilos.css   <span class="c">colores y forma</span>
+    ├── catalogo.js   <span class="c">el buscador</span>
+    └── libros.json   <span class="c">6 libros, 2 prestados</span></pre>
+  </div><div>
+    <table><tr><th>¿Quién hace qué?</th><th>Dónde corre</th></tr>
+      <tr><td>nginx entrega los archivos tal como están</td><td>En el contenedor</td></tr>
+      <tr><td><code>catalogo.js</code> lee <code>libros.json</code>, dibuja la lista y filtra</td><td>En el <b>navegador</b> del visitante</td></tr></table>
+    <div class="nota">Esta diferencia importa en el paso 6: las herramientas de línea de comandos como <code>curl</code> no ejecutan JavaScript.</div>
+  </div></div>` },
+
+{ g: 'Parte 2 · Clase 3: contenedor', t: 'Lee el Dockerfile', k: ['Clase 3', 'Paso 3'], h: `
+  <div class="dos"><div>
+    ${codigo(`
+# Biblioteca La Esquina · sitio web estático
+FROM nginx:1.27-alpine
+
+# nginx sirve todo lo que esté en esta carpeta
+COPY sitio/ /usr/share/nginx/html/
+
+EXPOSE 80
+# La imagen de nginx ya trae su CMD: no hace falta escribirlo`)}
+  </div><div>
+    <table><tr><th>Línea</th><th>En palabras</th></tr>
+      <tr><td><code>FROM nginx:1.27-alpine</code></td><td>Parte de una imagen que ya trae el servidor web nginx, en su versión liviana</td></tr>
+      <tr><td><code>COPY sitio/ …/html/</code></td><td>Copia la carpeta <code>sitio/</code> a la carpeta que nginx publica</td></tr>
+      <tr><td><code>EXPOSE 80</code></td><td>nginx escucha en el <b>80</b> dentro del contenedor. Documenta, no publica</td></tr>
+      <tr><td>(sin <code>CMD</code>)</td><td>La imagen de nginx ya sabe cómo arrancar</td></tr></table>
+    <div class="alerta">Recuerda el <b>80</b>: es el valor de <code>PUERTO_APP</code> en la Clase 4.</div>
+  </div></div>` },
+
+{ g: 'Parte 2 · Clase 3: contenedor', t: 'Construye y enciende', k: ['Clase 3', 'Paso 4'], h: `
+  <div class="dos"><div>
+    <p>En una terminal (en Windows, Git Bash), dentro de <code>proyectos/biblioteca-barrio</code>:</p>
+    ${codigo(`
+docker build -t biblioteca:0.1.0 .
+docker run -d -p 9000:80 --name biblioteca biblioteca:0.1.0
+docker ps`)}
+    ${ver(['<code>docker ps</code> muestra <code>biblioteca</code> con <code>0.0.0.0:9000-&gt;80/tcp</code>.'])}
+  </div><div>
+    <div class="flujo">
+      <div class="caja"><b>Tu equipo</b><small>localhost:<b>9000</b></small></div><span class="flecha">→ -p 9000:80 →</span>
+      <div class="caja ok"><b>Contenedor</b><small>nginx en el <b>80</b></small></div>
+    </div>
+    ${log('Terminal', `
+  $ docker ps
+~ CONTAINER ID   IMAGE              STATUS         PORTS                  NAMES
+  3f9c1a2b7d40   biblioteca:0.1.0   Up 5 seconds   0.0.0.0:9000->80/tcp   biblioteca`)}
+  </div></div>` },
+
+{ g: 'Parte 2 · Clase 3: contenedor', t: 'Ábrelo en el navegador', k: ['Clase 3', 'Paso 5'], fn: 'sitio', h: `
+  <div class="dos"><div>
+    <p>Abre <code>http://localhost:9000</code>. Esta es una vista previa con los datos reales: prueba el buscador.</p>
+    ${ver(['El título «Biblioteca La Esquina» y un buscador.', 'El resumen dice «6 de 6 libros · 4 disponibles».', 'Al escribir «García» queda solo <i>Cien años de soledad</i>.'])}
+  </div><div>
+    ${navegador('localhost:9000', '', `<div class="bib">
+      <div class="bib-cab"><b>Biblioteca La Esquina</b><small>Catálogo de la biblioteca comunitaria del barrio. Busca un libro y mira si está disponible.</small></div>
+      <div class="bib-cuerpo"><label for="bibBuscar">Buscar por título o autor</label>
+      <input id="bibBuscar" type="search" placeholder="Ej.: García Márquez">
+      <p id="bibResumen"></p><ul id="bibLista"></ul></div></div>`)}
+  </div></div>` },
+
+{ g: 'Parte 2 · Clase 3: contenedor', t: 'Escribe y comprueba tus dos pruebas', k: ['Clase 3', 'Paso 6'], h: `
+  <div class="dos"><div>
+    <table><tr><th>#</th><th>Si hago…</th><th>Debo ver…</th></tr>
+      <tr><td>1</td><td>Abro <code>/</code></td><td>«Biblioteca La Esquina»</td></tr>
+      <tr><td>2</td><td>Abro <code>/libros.json</code></td><td>«Cien años de soledad»</td></tr></table>
+    ${codigo(`
+curl -s http://localhost:9000/ | grep "Biblioteca La Esquina"
+curl -s http://localhost:9000/libros.json | grep "Cien años de soledad"`)}
+    ${ver(['Cada comando imprime la línea donde aparece el texto. Si no imprime nada, la prueba no pasó.'])}
+  </div><div>
+    ${log('Terminal', `
+  $ curl -s http://localhost:9000/ | grep "Biblioteca La Esquina"
+V <title>Biblioteca La Esquina · Catálogo</title>
+V   <h1>Biblioteca La Esquina</h1>
+  $ curl -s http://localhost:9000/libros.json | grep "Cien años de soledad"
+V     {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", "disponible": true},
+  $ curl -s http://localhost:9000/ | grep "Cien años de soledad"
+~ (no imprime nada)`)}
+    ${resp('¿Por qué el libro no aparece al pedir <code>/</code>?', 'Porque <code>curl</code> no ejecuta JavaScript. La lista la dibuja <code>catalogo.js</code> en el navegador, después de cargar la página. De <code>/</code>, <code>curl</code> recibe el <code>index.html</code> sin libros. Los datos sí están en <code>/libros.json</code>: por eso la prueba 2 pide ese archivo.')}
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Prepara tu fork y crea el workflow', k: ['Clase 4', 'Pasos 7 y 8'], h: `
+  <div class="dos"><div>
+    <h2 style="margin-top:0">Si no tienes fork todavía</h2>
+    <ol class="instr"><li>En <code>github.com/dlemusg/Estud-IA-Nube-Int</code>: ${b('Fork')} → ${bv('Create fork')}.</li><li>En tu fork: ${b('Actions')} → ${bv('I understand my workflows, go ahead and enable them')}.</li></ol>
+    <h2>Crea el archivo</h2>
+    <ol class="instr">
+      <li>Copia la plantilla <code>clases/clase-04/villa-nube/ci/plantillas/ci-docker.yml</code>.</li>
+      <li>${b('Add file')} → ${b('Create new file')}.</li>
+      <li>Nombre: <code>.github/workflows/biblioteca-barrio.yml</code></li>
+      <li>Pega la plantilla. Todavía no hagas commit.</li>
+    </ol>
+  </div><div>
+    ${navegador('github.com/MI-USUARIO/Estud-IA-Nube-Int/new/main', 'Code', `
+      <div style="font:.85rem var(--mono);margin-bottom:.6rem">Estud-IA-Nube-Int / <span class="boton-gh resalta">.github/workflows/biblioteca-barrio.yml</span></div>
+      ${codigo(`
+# Plantilla de CI para cualquier proyecto con Dockerfile
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+...`)}`)}
+    <div class="nota"><b>¿Por qué <code>ci-docker.yml</code>?</b> El proyecto tiene Dockerfile, pero no tiene pruebas de código (ni pytest ni <code>npm test</code>): todo se prueba con el contenedor encendido.</div>
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Cambia lo que dice CAMBIA', k: ['Clase 4', 'Paso 9', 'Complétalo aquí'], fn: 'plantilla', h: `
+  <p>Escribe en cada casilla el valor correcto para Biblioteca La Esquina. Pista: todo está en los pasos 3 y 6.</p>
+  <pre class="code" id="plantilla"><span class="k">name</span>: Biblioteca La Esquina CI   <span class="c"># recomendado: así lo distingues en Actions</span>
+
+<span class="k">defaults</span>:
+  <span class="k">run</span>:
+    <span class="c"># CAMBIA: la carpeta donde está el Dockerfile</span>
+    <span class="k">working-directory</span>: <input data-r="proyectos/biblioteca-barrio" aria-label="Carpeta" style="width:17em">
+
+<span class="k">env</span>:
+  <span class="c"># CAMBIA: el puerto en el que escucha la aplicación DENTRO del contenedor</span>
+  <span class="k">PUERTO_APP</span>: <input data-r="80" aria-label="Puerto" style="width:5em">
+  ...
+      - <span class="k">name</span>: "Prueba 1 · Si abro /, debo ver Biblioteca La Esquina"
+        <span class="k">run</span>: |
+          curl -s http://localhost:9000/ | tee respuesta.txt
+          grep -q "<input data-r="Biblioteca La Esquina" aria-label="Texto de la prueba 1">" respuesta.txt
+
+      - <span class="k">name</span>: "Prueba 2 · Si abro /libros.json, debo ver Cien años de soledad"
+        <span class="k">run</span>: |
+          curl -s http://localhost:9000/<input data-r="libros.json" aria-label="Ruta de la prueba 2" style="width:8em"> | tee respuesta.txt
+          grep -q "<input data-r="Cien años de soledad" aria-label="Texto de la prueba 2">" respuesta.txt</pre>
+  <div class="acciones"><button class="btn prim" id="comprobar">Comprobar</button><button class="btn" id="rellenar">Mostrar la solución</button><span id="resultado"></span></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'El workflow completo', k: ['Clase 4', 'Paso 9', 'Solución'], h: `
+  <div class="dos"><div>
+    ${codigo(`
+name: Biblioteca La Esquina CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    working-directory: "proyectos/biblioteca-barrio"
+env:
+  PUERTO_APP: "80"
+jobs:
+  imagen:
+    name: Imagen y prueba de humo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+      - name: Construir la imagen
+        run: docker build -t mi-proyecto:${SHA} .
+      - name: Encender el contenedor
+        run: docker run -d -p 9000:${PUERTO} --name app mi-proyecto:${SHA}
+      - name: Esperar a que responda
+        run: |
+          for i in $(seq 1 30); do
+            curl -s -o /dev/null http://localhost:9000/ && exit 0
+            sleep 1
+          done
+          echo "La aplicación no respondió en 30 segundos"
+          exit 1
+      - name: "Prueba 1 · Si abro /, debo ver Biblioteca La Esquina"
+        run: |
+          curl -s http://localhost:9000/ | tee respuesta.txt
+          grep -q "Biblioteca La Esquina" respuesta.txt
+      - name: "Prueba 2 · Si abro /libros.json, debo ver Cien años de soledad"
+        run: |
+          curl -s http://localhost:9000/libros.json | tee respuesta.txt
+          grep -q "Cien años de soledad" respuesta.txt
+      - name: Logs del contenedor (si algo falló)
+        if: failure()
+        run: docker logs app`)}
+  </div><div>
+    <table><tr><th>Paso</th><th>Qué hace</th></tr>
+      <tr><td>Descargar el código</td><td>Trae tu fork a la máquina limpia de GitHub</td></tr>
+      <tr><td>Construir la imagen</td><td><code>docker build</code>; la etiqueta es el código del commit</td></tr>
+      <tr><td>Encender el contenedor</td><td>El 9000 del runner va al 80 del contenedor</td></tr>
+      <tr><td>Esperar a que responda</td><td>Intenta 30 segundos; si nginx no contesta, falla</td></tr>
+      <tr><td>Prueba 1 y 2</td><td><code>curl</code> pide, <code>tee</code> muestra la respuesta en el log y <b><code>grep -q</code> decide</b>: si no encuentra el texto, sale con 1 y el paso queda en rojo</td></tr>
+      <tr><td>Logs del contenedor</td><td>Solo si algo falló: lo que escribió nginx</td></tr></table>
+    <div class="alerta"><b>El verde que engaña:</b> <code>curl -s</code> termina en 0 aunque la página responda 404. Sin la línea <code>grep -q</code>, la prueba queda verde con cualquier respuesta.</div>
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Commit y primera ejecución', k: ['Clase 4', 'Paso 10'], anim: 'corre', h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>${bv('Commit changes')} → ${bv('Commit changes')}.</li><li>Abre ${b('Actions')} y espera alrededor de un minuto.</li></ol>
+    ${ver(['<b>Biblioteca La Esquina CI</b> termina en ✓ verde.', 'En el job, el paso de logs aparece omitido (⊘).'])}
+    <div class="acciones"><button class="btn" data-reinicia>↻ Ver otra vez</button></div>
+  </div><div>
+    ${navegador('…/actions', 'Actions', `
+      <div class="lado"><div class="lista"><div>All workflows</div><div class="on">Biblioteca La Esquina CI</div><div>Clase 4 · Villa Nube CI</div></div>
+      <div>${fila('run" id="estRun', '<b>Create biblioteca-barrio.yml</b>', 'Biblioteca La Esquina CI #1 · main · <span id="tRun">en curso…</span>')}</div></div>`)}
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Lee el log verde', k: ['Clase 4', 'Paso 10'], h: `
+  <div class="dos"><div>
+    <p>Abre la ejecución → job <b>Imagen y prueba de humo</b>. Abre las dos pruebas: gracias a <code>tee</code>, ves exactamente lo que respondió nginx.</p>
+    ${ver(['Todos los pasos con ✓.', 'En la prueba 2 aparece la línea de <i>Cien años de soledad</i>.'])}
+  </div><div>
+    ${log('Imagen y prueba de humo', `
++ ✓ Descargar el código
++ ✓ Construir la imagen
++ ✓ Encender el contenedor
++ ✓ Esperar a que responda
++ ✓ Prueba 1 · Si abro /, debo ver Biblioteca La Esquina
+    <title>Biblioteca La Esquina · Catálogo</title>
+~   ...
+    <h1>Biblioteca La Esquina</h1>
++ ✓ Prueba 2 · Si abro /libros.json, debo ver Cien años de soledad
+V     {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", ...},
+~ ⊘ Logs del contenedor (si algo falló)`)}
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Provoca un rojo: borra un libro', k: ['Clase 4', 'Paso 11'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>En tu fork abre <code>proyectos/biblioteca-barrio/sitio/libros.json</code> → lápiz ✏️.</li><li>Borra la línea de <i>Cien años de soledad</i>.</li><li>Haz commit.</li></ol>
+    ${codigo(`
+  "libros": [
+-     {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", "disponible": true},
+    {"titulo": "La vorágine", "autor": "José Eustasio Rivera", "disponible": false},`)}
+    <div class="nota">El JSON sigue siendo válido: la línea que borraste terminaba en coma. El sitio funciona; solo cambió el contenido.</div>
+  </div><div>
+    ${log('Imagen y prueba de humo', `
++ ✓ Esperar a que responda
++ ✓ Prueba 1 · Si abro /, debo ver Biblioteca La Esquina
+! ✕ Prueba 2 · Si abro /libros.json, debo ver Cien años de soledad
+    Run curl -s http://localhost:9000/libros.json | tee respuesta.txt
+    {
+      "biblioteca": "Biblioteca La Esquina",
+      "libros": [
+R       {"titulo": "La vorágine", "autor": "José Eustasio Rivera", ...},
+~       ...
+! Error: Process completed with exit code 1.
++ ✓ Logs del contenedor (si algo falló)
+    172.17.0.1 - - "GET / HTTP/1.1" 200 ...
+    172.17.0.1 - - "GET /libros.json HTTP/1.1" 200 ...`)}
+    ${resp('Ver respuesta: lee el rojo', `<table>
+      <tr><td>¿Qué paso quedó en rojo?</td><td><b>Prueba 2</b>. La 1 pasó: el título sigue ahí</td></tr>
+      <tr><td>¿Primer mensaje útil?</td><td><code>grep -q</code> no imprime nada: lo útil es la respuesta que dejó <code>tee</code>. El libro ya no está</td></tr>
+      <tr><td>¿Qué dicen los logs de nginx?</td><td><code>GET /libros.json</code> respondió <b>200</b>: el sitio funciona</td></tr>
+      <tr><td>¿Entorno o comportamiento?</td><td><b>Comportamiento</b>: respondió, pero sin el contenido esperado</td></tr></table>`)}
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Un segundo rojo: el puerto equivocado', k: ['Clase 4', 'Paso 12'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>Deshaz el cambio de <code>libros.json</code>.</li><li>En el workflow cambia el puerto y haz commit:</li></ol>
+    ${codigo(`
+env:
+-   PUERTO_APP: "80"
++   PUERTO_APP: "8080"`)}
+    ${resp('¿Qué pasó y de qué tipo es?', 'El contenedor arrancó bien (los logs muestran a nginx encendido), pero el workflow conecta el 9000 del runner con el <b>8080</b> del contenedor, donde nadie escucha: nginx está en el 80. El paso de espera se rinde a los 30 segundos y las pruebas se omiten. Es <b>entorno</b>: el sitio está bien; la configuración no deja alcanzarlo. Se revisa <code>PUERTO_APP</code> contra el <code>EXPOSE</code> del Dockerfile.')}
+  </div><div>
+    <div class="flujo">
+      <div class="caja"><b>Runner</b><small>localhost:9000</small></div><span class="flecha">→ 9000:8080 →</span>
+      <div class="caja bad"><b>Contenedor :8080</b><small>nadie escucha</small></div>
+      <div class="caja skip"><b>nginx :80</b><small>esperando</small></div>
+    </div>
+    ${log('Imagen y prueba de humo', `
++ ✓ Construir la imagen
++ ✓ Encender el contenedor
+! ✕ Esperar a que responda
+R   La aplicación no respondió en 30 segundos
+! Error: Process completed with exit code 1.
+~ ⊘ Prueba 1 · Si abro /, debo ver Biblioteca La Esquina
+~ ⊘ Prueba 2 · Si abro /libros.json, debo ver Cien años de soledad
++ ✓ Logs del contenedor (si algo falló)
+~   ... nginx/1.27 ... start worker processes`)}
+  </div></div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: '¿Entorno o comportamiento?', k: ['Clase 4', 'Clasifica'], fn: 'votos', h: `
+  <p>Vota en cada log: <b>E</b> si faltaba algo para poder correr o alcanzar el sitio (entorno), <b>C</b> si el sitio respondió pero distinto de lo esperado (comportamiento).</p>
+  <div class="tarjetas">
+    ${[
+      ['1', 'Prueba 2 ✕\nla respuesta ya no trae\n«Cien años de soledad»', 'C', 'El sitio respondió 200, pero con otros datos.'],
+      ['2', 'Esperar a que responda ✕\nLa aplicación no respondió\nen 30 segundos', 'E', 'PUERTO_APP no coincide con el puerto de nginx: el sitio está bien, pero nadie lo alcanza.'],
+      ['3', 'Invalid workflow file\n(al hacer commit del YAML)', 'E', 'El YAML está mal escrito, casi siempre la sangría: el workflow ni siquiera arranca.'],
+    ].map(([n, l, r, por]) => `<div class="tarjeta" data-r="${r}" data-por="${esc(por)}"><b>Log ${n}</b><pre>${esc(l)}</pre>
+      <div class="votos"><button class="btn" data-v="E">E · entorno</button><button class="btn" data-v="C">C · comportamiento</button></div><div class="fb"></div></div>`).join('')}
+  </div>` },
+
+{ g: 'Parte 3 · Clase 4: CI', t: 'Arregla y guarda la evidencia', k: ['Clase 4', 'Paso 13'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>Deja <code>PUERTO_APP: "80"</code> y haz commit.</li><li>Copia en tus notas el enlace de una ejecución roja (la del libro borrado) y el de la verde.</li></ol>
+    ${ver(['La ejecución nueva termina en ✓ verde.', 'Tengo los dos enlaces: son mi evidencia.'])}
+  </div><div>
+    ${navegador('…/actions/workflows/biblioteca-barrio.yml', 'Actions', `<b>5 workflow runs</b>
+      ${fila('ok', '<b>Update biblioteca-barrio.yml</b> · vuelve al puerto 80', 'Biblioteca La Esquina CI #5')}
+      ${fila('bad', '<b>Update biblioteca-barrio.yml</b> · puerto 8080', 'Biblioteca La Esquina CI #4')}
+      ${fila('ok', '<b>Update libros.json</b> · devuelve el libro', 'Biblioteca La Esquina CI #3')}
+      ${fila('bad', '<b>Update libros.json</b> · borra Cien años de soledad', 'Biblioteca La Esquina CI #2')}
+      ${fila('ok', '<b>Create biblioteca-barrio.yml</b>', 'Biblioteca La Esquina CI #1')}`)}
+  </div></div>` },
+
+{ g: 'Parte 4 · Cierre', t: 'Reto: prueba la regla del negocio', k: ['Reto opcional', 'Paso 14'], h: `
+  <div class="dos"><div>
+    <p>Las dos pruebas confirman que el sitio responde y que un libro existe, pero <b>ninguna revisa la regla</b>: si alguien cambia <i>La vorágine</i> a <code>"disponible": true</code>, todo sigue en verde.</p>
+    <p>Agrega esta prueba después de la prueba 2:</p>
+    ${codigo(`
+      - name: "Prueba 3 · Si abro /libros.json, La vorágine sale prestada"
+        run: |
+          curl -s http://localhost:9000/libros.json | tee respuesta.txt
+          grep -q '"La vorágine".*"disponible": false' respuesta.txt`)}
+    <div class="nota">Funciona porque cada libro ocupa una sola línea en <code>libros.json</code>: <code>.*</code> deja pasar cualquier cosa entre el título y <code>"disponible": false</code>.</div>
+  </div><div>
+    <h2 style="margin-top:0">Pruébala</h2>
+    ${codigo(`
+- {"titulo": "La vorágine", "autor": "José Eustasio Rivera", "disponible": false},
++ {"titulo": "La vorágine", "autor": "José Eustasio Rivera", "disponible": true},`)}
+    ${ver(['Con <code>true</code>, la prueba 3 queda en rojo.', 'Al deshacerlo, vuelve a verde.'])}
+  </div></div>` },
+
+{ g: 'Parte 4 · Cierre', t: 'Escribe «Cómo se valida» en el README', k: ['Cierre', 'Paso 15'], h: `
+  <div class="dos"><div>
+    <p>En <code>proyectos/biblioteca-barrio/README.md</code> de tu fork. Esta sección le dice a cualquiera qué protege tu workflow y qué no.</p>
+    <div class="nota">Si hiciste el reto, agrega la prueba 3 a la lista y quita la marca de «Prestado» de lo que todavía no se valida.</div>
+  </div><div>
+    ${codigo(`
+## Cómo se valida
+
+Uso el proyecto de práctica Biblioteca La Esquina del curso.
+
+Cada vez que se sube un cambio, GitHub Actions corre
+el workflow .github/workflows/biblioteca-barrio.yml:
+
+1. Construye la imagen de nginx con el sitio y la enciende.
+2. Prueba 1: «Si abro /, debo ver Biblioteca La Esquina».
+3. Prueba 2: «Si abro /libros.json, debo ver
+   Cien años de soledad».
+
+Si algo falla, el check queda en rojo y el cambio
+no se considera listo.
+
+Lo que todavía NO se valida: que el buscador filtre
+bien (curl no ejecuta JavaScript), que los prestados
+se marquen como «Prestado» y que el sitio esté
+publicado en internet.`)}
+  </div></div>` },
+
+{ g: 'Parte 4 · Cierre', t: '¿Qué te protege? Revisión en parejas', k: ['Cierre', 'Paso 16', 'Parejas'], h: `
+  <div class="flujo">
+    <div class="caja"><b>1 · Compartes</b><small>fork y última ejecución verde, sin explicar</small></div><span class="flecha">→</span>
+    <div class="caja"><b>2 · Tu pareja lee</b><small>el workflow y el log</small></div><span class="flecha">→</span>
+    <div class="caja bad"><b>3 · Rompes en vivo</b><small>¿queda en rojo?</small></div><span class="flecha">→</span>
+    <div class="caja"><b>4 · Intercambian</b><small>y ajustan</small></div>
+  </div>
+  <table><tr><th>Lo anota tu pareja</th><th>Ejemplo</th></tr>
+    <tr><td>¿Qué prueba protege este cambio?</td><td>La prueba 2: que <i>Cien años de soledad</i> esté en el catálogo</td></tr>
+    <tr><td>Si la prueba falla, ¿qué pasa?</td><td>El check queda en rojo y GitHub avisa al autor del commit; todavía no hay nada que se detenga después, porque no se publica</td></tr>
+    <tr><td>¿Qué NO está probando?</td><td>El buscador, la marca de «Prestado» y la publicación</td></tr>
+    <tr><td>¿El cambio en vivo quedó en rojo?</td><td>Sí: al borrar el libro falló la prueba 2</td></tr></table>` },
+
+{ g: 'Parte 4 · Cierre', t: 'Lo que le falta, para las próximas clases', k: ['Cierre', 'Paso 17'], h: `
+  <table><tr><th>Problema de hoy</th><th>Se trabaja en</th></tr>
+    <tr><td>Actualizar el catálogo exige editar un archivo y volver a construir la imagen</td><td>Despliegue e infraestructura como código · Clases 5–6</td></tr>
+    <tr><td>No está publicado en internet</td><td>Despliegue, redes y exposición del servicio · Clases 5–8</td></tr>
+    <tr><td>No sabemos cuántas personas lo visitan</td><td>Observabilidad · Clases 7–8 (los logs de nginx ya registran cada visita)</td></tr></table>
+  ${ver(['Mi workflow está en verde y tengo el enlace de un rojo y de un verde.', 'Mi README tiene la sección «Cómo se valida».', 'Escribí en mi evidencia que uso el proyecto de práctica del curso.'])}
+  <p style="color:var(--muted);font-size:.85rem;margin-top:2rem">Caso ficticio con fines educativos. Material de apoyo generado con asistencia de IA y revisado por el profesor del curso.</p>` },
+];
+
+// ---------- Vista previa del sitio ----------
+function prepararSitio() {
+  const lista = $('#bibLista'), resumen = $('#bibResumen'), buscar = $('#bibBuscar');
+  if (!lista) return;
+  const mostrar = f => {
+    const t = f.toLowerCase();
+    const vis = LIBROS.filter(l => l.titulo.toLowerCase().includes(t) || l.autor.toLowerCase().includes(t));
+    resumen.textContent = `${vis.length} de ${LIBROS.length} libros · ${vis.filter(l => l.disponible).length} disponibles`;
+    lista.innerHTML = vis.map(l => `<li class="${l.disponible ? '' : 'prestado'}"><span class="estado">${l.disponible ? 'Disponible' : 'Prestado'}</span><b>${esc(l.titulo)}</b><br>${esc(l.autor)}</li>`).join('');
+  };
+  buscar.addEventListener('input', e => mostrar(e.target.value));
+  mostrar('');
+}
+
+// ---------- Navegación ----------
+const $ = s => document.querySelector(s);
+const escena = $('#escena'), indice = $('#indice');
+const vistos = new Set();
+let actual = 0, temporizador = null;
+
+function pintarIndice() {
+  let grupo = '', html = '';
+  PASOS.forEach((p, i) => {
+    if (p.g !== grupo) { grupo = p.g; html += `<h3>${grupo}</h3>`; }
+    html += `<a href="#paso-${i + 1}" data-i="${i}"><span class="n">${i + 1}</span><span>${p.t}</span></a>`;
+  });
+  indice.innerHTML = html;
+}
+
+function ir(i) {
+  actual = Math.max(0, Math.min(PASOS.length - 1, i));
+  const p = PASOS[actual];
+  vistos.add(actual);
+  escena.innerHTML = `<article class="paso">
+    <div class="kicker">${p.k.map((c, j) => `<span class="chip ${j === 0 ? 'ej' : ''}">${c}</span>`).join('')}</div>
+    <h1>${p.t}</h1>${p.h}</article>`;
+  escena.scrollTop = 0;
+  $('#contador').textContent = `Paso ${actual + 1} de ${PASOS.length}`;
+  $('#barra').style.width = `${((actual + 1) / PASOS.length) * 100}%`;
+  $('#ant').disabled = actual === 0;
+  $('#sig').textContent = actual === PASOS.length - 1 ? 'Fin ✓' : 'Siguiente →';
+  $('#sig').disabled = actual === PASOS.length - 1;
+  indice.querySelectorAll('a').forEach(a => {
+    const n = +a.dataset.i;
+    a.classList.toggle('activo', n === actual);
+    a.classList.toggle('visto', vistos.has(n) && n !== actual);
+  });
+  indice.querySelector('a.activo')?.scrollIntoView({ block: 'nearest' });
+  history.replaceState(null, '', `#paso-${actual + 1}`);
+  document.body.classList.remove('ver-menu');
+  clearTimeout(temporizador);
+  if (p.anim === 'corre') animarEjecucion();
+  if (p.fn === 'plantilla') prepararPlantilla();
+  if (p.fn === 'votos') prepararVotos();
+  if (p.fn === 'sitio') prepararSitio();
+}
+
+function animarEjecucion() {
+  const est = $('#estRun'), t = $('#tRun');
+  if (!est) return;
+  est.className = 'est run'; t.textContent = 'en curso…';
+  temporizador = setTimeout(() => { est.className = 'est ok'; t.textContent = 'terminó en 1 min 46 s'; }, 3500);
+  escena.querySelector('[data-reinicia]')?.addEventListener('click', animarEjecucion);
+}
+
+function prepararPlantilla() {
+  const entradas = [...escena.querySelectorAll('#plantilla input')];
+  const norm = s => s.trim().replace(/\s+/g, ' ').replace(/[“”]/g, '"').replace(/^["']|["']$/g, '').replace(/^\//, '');
+  $('#comprobar').onclick = () => {
+    let bien = 0, pista = '';
+    entradas.forEach(e => {
+      const ok = norm(e.value) === e.dataset.r;
+      e.className = ok ? 'bien' : 'mal';
+      if (ok) bien++;
+    });
+    $('#resultado').textContent = bien === entradas.length
+      ? '¡Completo! En el siguiente paso está el workflow entero.'
+      : `${bien} de ${entradas.length} bien.${pista}`;
+  };
+  $('#rellenar').onclick = () => { entradas.forEach(e => { e.value = e.dataset.r; e.className = 'bien'; }); $('#resultado').textContent = 'Esta es la solución.'; };
+}
+
+function prepararVotos() {
+  escena.querySelectorAll('.tarjeta[data-r]').forEach(t => {
+    t.querySelectorAll('button[data-v]').forEach(btn => btn.onclick = () => {
+      const ok = btn.dataset.v === t.dataset.r;
+      t.className = 'tarjeta ' + (ok ? 'ok' : 'no');
+      t.querySelector('.fb').innerHTML = (ok ? '✓ <b>Correcto.</b> ' : `✕ Es <b>${t.dataset.r}</b>. `) + t.dataset.por;
+    });
+  });
+}
+
+// Casillas «Debes ver»: se marcan con un clic
+escena.addEventListener('click', e => { const li = e.target.closest('.ver li'); if (li) li.classList.toggle('hecho'); });
+indice.addEventListener('click', e => { const a = e.target.closest('a[data-i]'); if (a) { e.preventDefault(); ir(+a.dataset.i); } });
+$('#ant').onclick = () => ir(actual - 1);
+$('#sig').onclick = () => ir(actual + 1);
+$('#btnMenu').onclick = () => document.body.classList.toggle('ver-menu');
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea')) return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') ir(actual + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') ir(actual - 1);
+});
+
+pintarIndice();
+const inicio = parseInt((location.hash.match(/paso-(\d+)/) || [])[1], 10);
+ir(Number.isFinite(inicio) ? inicio - 1 : 0);
+</script>
+</body>
+</html>

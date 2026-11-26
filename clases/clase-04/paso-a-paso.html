@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clase 4 · Paso a paso · Integración continua con GitHub Actions</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --ink: #1d2433; --muted: #5d6677; --line: #dcd8cf;
+    --accent: #0f6e6e; --accent-soft: #dff0ee; --ok: #1a7f37; --ok-soft: #e3f4e7;
+    --bad: #c0362c; --bad-soft: #fbe6e3; --warn: #9a6700; --warn-soft: #fbf0d4;
+    --skip: #8a8f98; --term: #161b22; --term-ink: #d6dde6; --code: #f3f1ec;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1a1f27; --ink: #e6e9ee; --muted: #9aa3b2; --line: #2c333f;
+      --accent: #4fb8b0; --accent-soft: #1b3533; --ok: #4ac26b; --ok-soft: #173123;
+      --bad: #f0776c; --bad-soft: #3a1f1d; --warn: #e0b341; --warn-soft: #352b14;
+      --skip: #7d8590; --term: #0b0e13; --code: #151a21;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--sans); display: grid; grid-template-rows: auto 1fr auto; }
+  code, pre, kbd { font-family: var(--mono); font-size: .9em; }
+  code { background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3em; }
+
+  /* Cabecera */
+  header { display: flex; align-items: center; gap: 1rem; padding: .8rem 1.4rem; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header .marca { font-weight: 700; letter-spacing: .01em; }
+  header .marca small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+  header .progreso { flex: 1; height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  header .progreso i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s ease; }
+  header .contador { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; white-space: nowrap; }
+  header button.menu { display: none; }
+
+  /* Cuerpo */
+  .cuerpo { display: grid; grid-template-columns: 290px 1fr; min-height: 0; }
+  nav { border-right: 1px solid var(--line); overflow-y: auto; padding: .8rem 0 2rem; background: var(--panel); }
+  nav h3 { margin: 1rem 1.2rem .3rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  nav a { display: flex; gap: .6rem; align-items: baseline; padding: .32rem 1.2rem; color: var(--ink); text-decoration: none; font-size: .9rem; border-left: 3px solid transparent; }
+  nav a span.n { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.4rem; font-size: .8rem; }
+  nav a:hover { background: var(--accent-soft); }
+  nav a.activo { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  nav a.visto span.n::after { content: " ✓"; color: var(--ok); }
+
+  main { overflow-y: auto; padding: 2rem clamp(1rem, 4vw, 3.5rem) 3rem; }
+  .paso { max-width: 980px; margin: 0 auto; animation: entra .25s ease; }
+  @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .kicker { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .4rem; }
+  .chip { font-size: .78rem; padding: .1rem .55rem; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+  .chip.ej { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  h1 { font-size: clamp(1.5rem, 2.6vw, 2.1rem); line-height: 1.2; margin: .2rem 0 1rem; }
+  h2 { font-size: 1.1rem; margin: 1.6rem 0 .5rem; }
+  .dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 1.6rem; align-items: start; }
+  .dos > * { min-width: 0; }
+  ol.instr { padding-left: 1.3rem; margin: 0; }
+  ol.instr li { margin: .35rem 0; }
+  .boton-gh { display: inline-block; font-size: .85em; padding: .05rem .5rem; border-radius: 6px; border: 1px solid var(--line); background: var(--code); font-weight: 600; white-space: nowrap; }
+  .boton-gh.verde { background: var(--ok); color: #fff; border-color: var(--ok); }
+
+  .ver { margin-top: 1.2rem; border: 1px solid var(--ok); background: var(--ok-soft); border-radius: 10px; padding: .7rem 1rem; }
+  .ver b { color: var(--ok); }
+  .ver ul { margin: .3rem 0 0; padding-left: 0; list-style: none; }
+  .ver li::before { content: "☐ "; color: var(--ok); }
+  .ver li.hecho::before { content: "☑ "; }
+  .ver li { cursor: pointer; }
+  .nota { margin-top: 1rem; border-left: 4px solid var(--accent); background: var(--accent-soft); padding: .6rem 1rem; border-radius: 0 8px 8px 0; }
+  .alerta { margin-top: 1rem; border-left: 4px solid var(--warn); background: var(--warn-soft); padding: .6rem 1rem; border-radius: 0 8px 8px 0; }
+
+  details.resp { margin-top: 1.2rem; border: 1px dashed var(--accent); border-radius: 10px; padding: .2rem 1rem; background: var(--panel); }
+  details.resp summary { cursor: pointer; font-weight: 600; color: var(--accent); padding: .5rem 0; }
+  details.resp[open] { border-style: solid; }
+
+  table { border-collapse: collapse; width: 100%; margin: .6rem 0; font-size: .93rem; background: var(--panel); }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--code); font-weight: 600; }
+
+  /* Pantallas simuladas */
+  .pantalla { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); box-shadow: 0 6px 24px rgba(0,0,0,.07); }
+  .barra { display: flex; align-items: center; gap: .5rem; padding: .45rem .7rem; background: var(--code); border-bottom: 1px solid var(--line); }
+  .barra .pts { display: flex; gap: 5px; }
+  .barra .pts i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+  .barra .url { flex: 1; font: .78rem var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: .15rem .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabs { display: flex; gap: 1.1rem; padding: .5rem 1rem 0; border-bottom: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+  .tabs span { padding-bottom: .45rem; }
+  .tabs span.on { color: var(--ink); border-bottom: 2px solid var(--bad); font-weight: 600; }
+  .contenido { padding: 1rem; font-size: .9rem; }
+  .fila { display: flex; align-items: center; gap: .6rem; padding: .55rem .2rem; border-bottom: 1px solid var(--line); }
+  .fila:last-child { border-bottom: 0; }
+  .fila .t { flex: 1; min-width: 0; }
+  .fila .t small { display: block; color: var(--muted); font-size: .78rem; }
+  .est { width: 18px; height: 18px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 11px; color: #fff; font-weight: 700; }
+  .est.ok { background: var(--ok); } .est.ok::after { content: "✓"; }
+  .est.bad { background: var(--bad); } .est.bad::after { content: "✕"; }
+  .est.skip { background: transparent; border: 2px solid var(--skip); } .est.skip::after { content: "⊘"; color: var(--skip); font-size: 12px; }
+  .est.run { border: 3px solid var(--warn); border-top-color: transparent; animation: gira 1s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .resalta { outline: 3px solid var(--warn); outline-offset: 3px; border-radius: 6px; animation: pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 50% { outline-color: transparent; } }
+  .lado { display: grid; grid-template-columns: 200px 1fr; gap: 1rem; }
+  .lado .lista div { padding: .3rem .5rem; border-radius: 6px; font-size: .85rem; }
+  .lado .lista div.on { background: var(--accent-soft); font-weight: 600; }
+  .menu-gh { border: 1px solid var(--line); border-radius: 8px; padding: .7rem; background: var(--panel); box-shadow: 0 6px 18px rgba(0,0,0,.12); max-width: 260px; margin-left: auto; font-size: .85rem; }
+
+  /* Terminal / log */
+  pre.term { margin: 0; background: var(--term); color: var(--term-ink); padding: .9rem 1rem; font-size: .78rem; line-height: 1.5; overflow-x: auto; border-radius: 0; }
+  .pantalla > pre.term { border-radius: 0; }
+  pre.term .ok { color: #56d364; } pre.term .bad { color: #ff7b72; } pre.term .dim { color: #7d8590; }
+  pre.term .hl { background: rgba(255,123,114,.18); display: inline-block; width: 100%; }
+  pre.term .hlok { background: rgba(86,211,100,.14); display: inline-block; width: 100%; }
+  pre.code { margin: 0; background: var(--code); padding: .9rem 1rem; font-size: .8rem; line-height: 1.55; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  pre.code .c { color: var(--muted); font-style: italic; }
+  pre.code .k { color: var(--accent); font-weight: 600; }
+  pre.code .del { background: var(--bad-soft); color: var(--bad); display: inline-block; width: 100%; }
+  pre.code .add { background: var(--ok-soft); color: var(--ok); display: inline-block; width: 100%; }
+  pre.code input { font: inherit; width: 11.5em; padding: 0 .3em; border: 1px dashed var(--accent); background: var(--panel); color: var(--ink); border-radius: 4px; }
+  pre.code input.bien { border: 1px solid var(--ok); background: var(--ok-soft); }
+  pre.code input.mal { border: 1px solid var(--bad); background: var(--bad-soft); }
+  .banco { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 1rem; }
+  .banco code { cursor: grab; }
+  .acciones { display: flex; gap: .6rem; margin-top: .8rem; flex-wrap: wrap; align-items: center; }
+  .btn { font: inherit; font-size: .9rem; padding: .45rem .95rem; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.prim { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  /* Diagrama de pipeline */
+  .flujo { display: flex; align-items: stretch; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .caja { flex: 1 1 140px; border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; background: var(--panel); font-size: .88rem; }
+  .caja b { display: block; margin-bottom: .2rem; }
+  .caja small { color: var(--muted); }
+  .caja.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .caja.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .caja.skip { border-style: dashed; color: var(--muted); }
+  .flecha { align-self: center; color: var(--muted); font-size: 1.2rem; }
+
+  /* Tarjetas de votación */
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .9rem; margin-top: 1rem; }
+  .tarjeta { border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; background: var(--panel); }
+  .tarjeta pre { margin: .3rem 0 .6rem; white-space: pre-wrap; font-size: .8rem; background: var(--term); color: var(--term-ink); padding: .5rem .6rem; border-radius: 6px; }
+  .tarjeta .votos { display: flex; gap: .4rem; }
+  .tarjeta .fb { margin-top: .5rem; font-size: .88rem; min-height: 1.3em; }
+  .tarjeta.ok { border-color: var(--ok); } .tarjeta.no { border-color: var(--bad); }
+
+  footer { display: flex; align-items: center; gap: .8rem; padding: .7rem 1.4rem; border-top: 1px solid var(--line); background: var(--panel); }
+  footer .ayuda { flex: 1; color: var(--muted); font-size: .82rem; }
+  footer kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 .35em; background: var(--code); }
+
+  @media (max-width: 860px) {
+    .cuerpo { grid-template-columns: 1fr; }
+    nav { display: none; position: fixed; inset: 56px 0 58px 0; z-index: 5; }
+    body.ver-menu nav { display: block; }
+    header button.menu { display: inline-block; }
+    .dos, .lado { grid-template-columns: 1fr; }
+    footer .ayuda { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <button class="btn menu" id="btnMenu" aria-label="Ver los pasos">☰</button>
+  <div class="marca">Clase 4 · Integración continua<small>Paso a paso con Villa Nube</small></div>
+  <div class="progreso" aria-hidden="true"><i id="barra"></i></div>
+  <div class="contador" id="contador"></div>
+</header>
+<div class="cuerpo">
+  <nav id="indice" aria-label="Pasos de la clase"></nav>
+  <main id="escena" tabindex="-1" aria-live="polite"></main>
+</div>
+<footer>
+  <button class="btn" id="ant">← Anterior</button>
+  <span class="ayuda">Usa <kbd>←</kbd> y <kbd>→</kbd> del teclado. Haz clic en cada «☐» cuando lo veas en tu pantalla.</span>
+  <button class="btn prim" id="sig">Siguiente →</button>
+</footer>
+
+<script>
+// Expresiones de GitHub: van en comillas normales para que JavaScript no las interprete
+const SHA = '${{ github.sha }}';
+
+// ---------- Ayudas para dibujar ----------
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const navegador = (url, tabs, cuerpo) => `
+  <div class="pantalla">
+    <div class="barra"><span class="pts"><i></i><i></i><i></i></span><span class="url">${url}</span></div>
+    ${tabs ? `<div class="tabs">${['Code','Issues','Pull requests','Actions','Settings'].map(t => `<span class="${t === tabs ? 'on' : ''}">${t}</span>`).join('')}</div>` : ''}
+    <div class="contenido">${cuerpo}</div>
+  </div>`;
+// Log: cada línea puede empezar con un marcador: "+" verde, "!" rojo, "~" gris, "R" resaltada roja, "V" resaltada verde
+const log = (titulo, lineas) => `
+  <div class="pantalla">
+    <div class="barra"><span class="pts"><i></i><i></i><i></i></span><span class="url">${titulo}</span></div>
+    <pre class="term">${lineas.trim().split('\n').map(l => {
+      const m = l[0], r = esc(l.slice(2));
+      return m === '+' ? `<span class="ok">${r}</span>` : m === '!' ? `<span class="bad">${r}</span>` :
+             m === '~' ? `<span class="dim">${r}</span>` : m === 'R' ? `<span class="hl">${r}</span>` :
+             m === 'V' ? `<span class="hlok">${r}</span>` : esc(l.slice(2));
+    }).join('\n')}</pre>
+  </div>`;
+// Código: "#" comentario, "-" línea borrada, "+" línea agregada
+const codigo = txt => `<pre class="code">${txt.replace(/^\n/, '').replace(/\n\s*$/, '').split('\n').map(l => {
+  if (l.startsWith('- ')) return `<span class="del">${esc(l)}</span>`;
+  if (l.startsWith('+ ')) return `<span class="add">${esc(l)}</span>`;
+  const i = l.indexOf('#');
+  if (i >= 0 && l.trim().startsWith('#')) return `<span class="c">${esc(l)}</span>`;
+  return esc(l).replace(/^(\s*-?\s*)([a-z_-]+):/i, '$1<span class="k">$2</span>:');
+}).join('\n')}</pre>`;
+const ver = items => `<div class="ver"><b>Debes ver</b><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+const resp = (titulo, html) => `<details class="resp"><summary>▸ ${titulo}</summary>${html}</details>`;
+const fila = (est, titulo, sub) => `<div class="fila"><span class="est ${est}"></span><div class="t">${titulo}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
+const b = t => `<span class="boton-gh">${t}</span>`;
+const bv = t => `<span class="boton-gh verde">${t}</span>`;
+
+// ---------- Los pasos ----------
+const PASOS = [
+{ g: 'Inicio', t: 'Lo que vas a construir hoy', k: ['Clase 4', '2 h 10 min'], h: `
+  <p>En la Clase 3 un compañero encendió tu proyecto siguiendo tu README. Hoy ese trabajo lo hace una máquina:
+  cada vez que cambias el código, GitHub construye tu proyecto, lo enciende y corre tus pruebas. Si algo se rompe, te avisa con un check rojo y un log que dice dónde.</p>
+  <div class="flujo">
+    <div class="caja"><b>Cambio</b><small>commit en GitHub</small></div><span class="flecha">→</span>
+    <div class="caja"><b>Pruebas del código</b><small><code>pytest -v</code></small></div><span class="flecha">→</span>
+    <div class="caja"><b>Imagen y prueba de humo</b><small>build · run · verificar.sh</small></div><span class="flecha">→</span>
+    <div class="caja ok"><b>Check ✓ o ✕</b><small>junto al commit</small></div>
+  </div>
+  <h2>Te llevas</h2>
+  <ul><li>Un workflow de GitHub Actions en tu repositorio.</li><li>Una ejecución en verde y otra en rojo provocada a propósito.</li><li>Una sección «Cómo se valida» en tu README.</li></ul>
+  <h2>Antes de empezar</h2>
+  ${ver(['Puedo entrar a mi cuenta de GitHub.', 'Tengo a mano mis dos pruebas «Si hago ___, debo ver ___» de la Clase 3.'])}
+  <div class="nota">Casi todo se hace en el navegador. Si algo falla, copia en el chat el nombre del paso en rojo y la primera línea de error.</div>` },
+
+{ g: 'Ejercicio 1 · Qué revisar', t: '¿Qué debería revisar la máquina?', k: ['Ejercicio 1', 'Parejas', '5 min'], h: `
+  <div class="dos"><div>
+    <ol class="instr">
+      <li>Mira tus dos pruebas de la Clase 3. Elige la que más te importaría que se comprobara sola <b>cada vez</b> que cambias el código.</li>
+      <li>Completa: «Si alguien rompe ___, esta prueba lo detecta porque ___».</li>
+    </ol>
+    <div class="nota"><b>¿Está bien elegida?</b> Si la prueba puede quedar en rojo cuando el comportamiento cambia, sí. «Que el pipeline salga verde» no es una prueba: es un resultado.</div>
+  </div><div>
+    <div class="pantalla"><div class="barra"><span class="url">Ejemplo resuelto · Villa Nube</span></div><div class="contenido">
+      <p style="font-size:1.05rem;margin:0">Si alguien cambia <b>la regla de los 90 días</b>, la prueba <i>«un documento vencido se rechaza»</i> lo detecta porque <b>la solicitud ya no recibe el error 422</b>.</p>
+    </div></div>
+  </div></div>` },
+
+{ g: 'Ejercicio 2 · Primera ejecución', t: 'Haz tu copia del repositorio (fork)', k: ['Ejercicio 2', 'Paso 1 de 5', 'Con el profesor'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>Entra a <code>github.com/dlemusg/Estud-IA-Nube-Int</code>.</li><li>Pulsa ${b('Fork')} y luego ${bv('Create fork')}.</li></ol>
+    ${ver(['La dirección es <code>github.com/MI-USUARIO/Estud-IA-Nube-Int</code>.'])}
+  </div><div>
+    ${navegador('github.com/dlemusg/Estud-IA-Nube-Int', 'Code', `
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem"><b>dlemusg / Estud-IA-Nube-Int</b><span class="chip">Public</span>
+      <span style="margin-left:auto" class="boton-gh resalta">⑂ Fork</span></div>
+      ${fila('', '📁 .github/workflows', 'clase-04-villa-nube.yml')}${fila('', '📁 clases', 'clase-03 · clase-04')}${fila('', '📁 proyectos', 'mercado-raices · bici-barrio · biblioteca-barrio')}`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 2 · Primera ejecución', t: 'Habilita Actions en tu fork', k: ['Ejercicio 2', 'Paso 2 de 5'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>En <b>tu</b> fork, abre la pestaña ${b('Actions')}.</li><li>Pulsa el botón verde ${bv('I understand my workflows, go ahead and enable them')}.</li></ol>
+    ${ver(['A la izquierda aparece la lista de workflows, con <b>Clase 4 · Villa Nube CI</b>.'])}
+    <div class="nota">GitHub apaga los workflows de los forks hasta que alguien los habilita: así nadie ejecuta código ajeno sin darse cuenta.</div>
+  </div><div>
+    ${navegador('github.com/MI-USUARIO/Estud-IA-Nube-Int/actions', 'Actions', `
+      <p style="margin:.2rem 0 1rem"><b>Workflows aren’t being run on this forked repository</b><br><small style="color:var(--muted)">Because this repository contained workflow files when it was forked…</small></p>
+      <span class="boton-gh verde resalta">I understand my workflows, go ahead and enable them</span>`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 2 · Primera ejecución', t: 'Corre el workflow a mano', k: ['Ejercicio 2', 'Paso 3 de 5'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>Elige <b>Clase 4 · Villa Nube CI</b> en la lista de la izquierda.</li><li>Pulsa ${b('Run workflow ▾')} y en el menú otra vez ${bv('Run workflow')}.</li></ol>
+    <div class="nota">El botón existe porque el workflow tiene <code>workflow_dispatch:</code> entre sus disparadores.</div>
+  </div><div>
+    ${navegador('…/actions/workflows/clase-04-villa-nube.yml', 'Actions', `
+      <div class="lado"><div class="lista"><div>All workflows</div><div class="on">Clase 4 · Villa Nube CI</div></div>
+      <div><div style="display:flex;align-items:center"><b>Clase 4 · Villa Nube CI</b><span class="boton-gh" style="margin-left:auto">Run workflow ▾</span></div>
+        <div class="menu-gh" style="margin-top:.6rem">Use workflow from<br><span class="boton-gh">Branch: main ▾</span><br><br><span class="boton-gh verde resalta">Run workflow</span></div></div></div>`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 2 · Primera ejecución', t: 'Espera el resultado', k: ['Ejercicio 2', 'Paso 4 de 5'], anim: 'corre', h: `
+  <div class="dos"><div>
+    <p>Aparece una ejecución con un círculo amarillo que gira. En uno o dos minutos cambia a verde.</p>
+    ${ver(['La ejecución termina con ✓ verde.'])}
+    <div class="nota">Mientras esperas: GitHub está creando una máquina Linux limpia solo para esta ejecución. Al terminar, la borra.</div>
+    <div class="acciones"><button class="btn" data-reinicia>↻ Ver otra vez</button></div>
+  </div><div>
+    ${navegador('…/actions', 'Actions', `
+      <b>1 workflow run</b>
+      ${fila('run" id="estRun', '<b>Clase 4 · Villa Nube CI</b>', 'Manually run by MI-USUARIO · main · <span id="tRun">en curso…</span>')}`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 2 · Primera ejecución', t: 'Lee el log de las pruebas del código', k: ['Ejercicio 2', 'Paso 5 de 5'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>Haz clic en la ejecución.</li><li>Abre el job <b>Pruebas del código</b> y el paso <b>Correr las pruebas</b>.</li><li>Luego abre el job <b>Imagen y prueba de humo</b> y el paso <b>Prueba de humo</b>.</li></ol>
+    ${ver(['En «Correr las pruebas»: <code>5 passed</code>.', 'En «Prueba de humo»: <code>5 pasaron, 0 fallaron</code>.'])}
+  </div><div>
+    ${log('Pruebas del código › Correr las pruebas', `
++ ✓ Descargar el código del repositorio
++ ✓ Instalar Python 3.12
++ ✓ Instalar las librerías
++ ✓ Correr las pruebas
+  Run pytest -v
+~ collected 5 items
+  test_salud_informa_version PASSED          [ 20%]
+  test_listo_con_base_disponible PASSED      [ 40%]
+  test_radicar_y_consultar PASSED            [ 60%]
+  test_documento_vencido_se_rechaza PASSED   [ 80%]
+  test_ciudadano_obligatorio PASSED          [100%]
+V ===================== 5 passed in 0.14s =====================`)}
+    <div style="height:.8rem"></div>
+    ${log('Imagen y prueba de humo › Prueba de humo', `
+  Run bash scripts/verificar.sh
+  P1 · El servicio está vivo e informa su versión
++   ✔ /salud → 200 {"estado":"ok","version":"a1b2c3d..."}
+  P2 · El servicio está listo
++   ✔ /listo → 200
+  P3 · Un ciudadano radica una solicitud y puede consultarla
++   ✔ POST /solicitudes → 201
++   ✔ GET /solicitudes/4f0c... → 200
+  P4 · Un documento vencido se rechaza
++   ✔ documento vencido → 422
+V Resultado: 5 pasaron, 0 fallaron
+~ - Logs del contenedor (si algo falló)   ← se omitió`)}
+  </div></div>
+  <div class="nota"><b>Qué pasó:</b> GitHub prestó una máquina, descargó el código, instaló Python y corrió las pruebas. Como pasaron, construyó la imagen, la encendió y repitió las pruebas de la Clase 3 contra el contenedor: tu arranque a ciegas, hecho por una máquina.</div>` },
+
+{ g: 'Ejercicio 3 · Rompe y arregla', t: 'Lee el workflow', k: ['Ejercicio 3', 'Paso 1 de 5', 'Equipo', '15 min'], h: `
+  <p>En tu fork abre <code>.github/workflows/clase-04-villa-nube.yml</code>. Esta es la parte que importa, con su traducción:</p>
+  <div class="dos"><div>
+    ${codigo(`
+name: Clase 4 · Villa Nube CI
+on:
+  push:
+    paths:
+      - "clases/clase-04/villa-nube/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+      - run: pytest -v
+  imagen:
+    needs: pruebas
+    steps:
+      - name: Logs del contenedor
+        if: failure()`)}
+  </div><div>
+    <table><tr><th>Línea</th><th>En palabras</th></tr>
+      <tr><td><code>on: push</code> + <code>paths</code></td><td>Corre cuando subo un cambio dentro de la carpeta de Villa Nube</td></tr>
+      <tr><td><code>workflow_dispatch</code></td><td>Agrega el botón «Run workflow»</td></tr>
+      <tr><td><code>contents: read</code></td><td>El workflow solo puede leer el repositorio</td></tr>
+      <tr><td><code>runs-on</code></td><td>Cada job corre en una máquina Linux limpia</td></tr>
+      <tr><td><code>checkout</code></td><td>Descarga el código</td></tr>
+      <tr><td><code>setup-python</code></td><td>Instala Python</td></tr>
+      <tr><td><code>pytest -v</code></td><td>Corre las pruebas</td></tr>
+      <tr><td><code>needs: pruebas</code></td><td>La imagen solo se construye si las pruebas pasaron</td></tr>
+      <tr><td><code>if: failure()</code></td><td>Este paso solo corre si algo falló antes</td></tr></table>
+  </div></div>` },
+
+{ g: 'Ejercicio 3 · Rompe y arregla', t: 'Rompe la regla del negocio', k: ['Ejercicio 3', 'Paso 2 de 5'], h: `
+  <div class="dos"><div>
+    <ol class="instr">
+      <li>En tu fork abre <code>clases/clase-04/villa-nube/app/app.py</code>.</li>
+      <li>Pulsa el lápiz ✏️.</li>
+      <li>En la línea de <code>DIAS_VIGENCIA</code> cambia <code>"90"</code> por <code>"900"</code>.</li>
+      <li>${bv('Commit changes')} → ${bv('Commit changes')}.</li>
+    </ol>
+    <div class="nota">Es el cambio que alguien haría «para ser más flexible». La pregunta es si alguna prueba lo nota.</div>
+  </div><div>
+    ${navegador('…/edit/main/clases/clase-04/villa-nube/app/app.py', 'Code', codigo(`
+# regla de negocio: antigüedad máxima del documento
+- DIAS_VIGENCIA = int(os.getenv("DIAS_VIGENCIA_DOCUMENTO", "90"))
++ DIAS_VIGENCIA = int(os.getenv("DIAS_VIGENCIA_DOCUMENTO", "900"))
+USA_POSTGRES = bool(os.getenv("DB_HOST"))`) + `<div style="text-align:right;margin-top:.7rem"><span class="boton-gh verde resalta">Commit changes…</span></div>`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 3 · Rompe y arregla', t: 'Aparece el rojo', k: ['Ejercicio 3', 'Paso 3 de 5'], h: `
+  <div class="dos"><div>
+    <p>El commit disparó el workflow solo, porque cambió un archivo dentro de <code>clases/clase-04/villa-nube/</code>.</p>
+    ${ver(['En Actions hay una ejecución nueva que termina en ✕ rojo.', 'El job «Imagen y prueba de humo» aparece omitido (⊘).'])}
+  </div><div>
+    ${navegador('…/actions/runs/…', 'Actions', `
+      <b>Update app.py</b> <small style="color:var(--muted)">· Clase 4 · Villa Nube CI #2</small>
+      <div style="margin-top:.6rem">
+      ${fila('bad', '<b>Pruebas del código</b>', 'falló en 31 s')}
+      ${fila('skip', 'Imagen y prueba de humo', 'omitido: depende de «Pruebas del código»')}</div>`)}
+    <div class="flujo"><div class="caja bad"><b>pruebas</b><small>✕ falló</small></div><span class="flecha">→ needs →</span><div class="caja skip"><b>imagen</b><small>⊘ no corrió</small></div></div>
+  </div></div>` },
+
+{ g: 'Ejercicio 3 · Rompe y arregla', t: 'Encuentra el primer error útil', k: ['Ejercicio 3', 'Paso 4 de 5'], h: `
+  <div class="dos"><div>
+    <p>Abre el job <b>Pruebas del código</b> → paso <b>Correr las pruebas</b>. Busca la línea que empieza con <code>FAILED</code> y la que empieza con <code>E</code>.</p>
+    <table><tr><th>Pregunta</th><th>Tu respuesta</th></tr>
+      <tr><td>¿Qué job quedó en rojo?</td><td></td></tr><tr><td>¿Qué prueba falló?</td><td></td></tr>
+      <tr><td>¿Qué esperaba y qué recibió?</td><td></td></tr><tr><td>¿Qué pasó con «Imagen y prueba de humo»?</td><td></td></tr></table>
+    ${resp('Ver respuesta', `<table>
+      <tr><td>Job en rojo</td><td><b>Pruebas del código</b>, paso «Correr las pruebas»</td></tr>
+      <tr><td>Prueba</td><td><code>test_documento_vencido_se_rechaza</code></td></tr>
+      <tr><td>Esperaba / recibió</td><td>Esperaba <b>422</b> (rechazado) y recibió <b>201</b> (creado): un documento de 91 días ahora se acepta</td></tr>
+      <tr><td>Imagen</td><td><b>Se omitió</b> por <code>needs: pruebas</code></td></tr></table>`)}
+  </div><div>
+    ${log('Pruebas del código › Correr las pruebas', `
+! ✕ Correr las pruebas
+  test_radicar_y_consultar PASSED            [ 60%]
+R test_documento_vencido_se_rechaza FAILED   [ 80%]
+  test_ciudadano_obligatorio PASSED          [100%]
+~ ========================= FAILURES =========================
+      def test_documento_vencido_se_rechaza(cliente):
+          viejo = (date.today() - timedelta(days=91)).isoformat()
+          r = cliente.post("/solicitudes", json={...})
+  >       assert r.status_code == 422
+R E       assert 201 == 422
+~ tests/test_app.py:47: AssertionError
+! FAILED test_documento_vencido_se_rechaza - assert 201 == 422
+! =============== 1 failed, 4 passed in 0.13s ================
+! Error: Process completed with exit code 1.`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 3 · Rompe y arregla', t: 'Arréglalo y guarda la evidencia', k: ['Ejercicio 3', 'Paso 5 de 5'], h: `
+  <div class="dos"><div>
+    <ol class="instr"><li>Vuelve a editar <code>app/app.py</code> y deja <code>"90"</code>.</li><li>Haz commit.</li><li>Copia en tus notas el enlace de la ejecución roja y el de la verde.</li></ol>
+    ${ver(['La ejecución nueva termina en ✓ verde.', 'Tengo los dos enlaces: son mi evidencia.'])}
+    <div class="alerta"><b>Checkpoint (minuto 12):</b> escriban en el chat general «Sala N: rojo y verde» o el paso donde se quedaron.</div>
+  </div><div>
+    ${navegador('…/actions', 'Actions', `<b>3 workflow runs</b>
+      ${fila('ok', '<b>Update app.py</b> · deja la vigencia en 90', 'Clase 4 · Villa Nube CI #3 · main')}
+      ${fila('bad', '<b>Update app.py</b> · vigencia 900', 'Clase 4 · Villa Nube CI #2 · main')}
+      ${fila('ok', '<b>Clase 4 · Villa Nube CI</b>', 'Manually run · #1')}`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 4 · Completa el workflow', t: 'Completa los espacios', k: ['Ejercicio 4', 'Paso 1 de 2', 'Equipo', '15 min'], fn: 'plantilla', h: `
+  <p>Es <code>clases/clase-04/villa-nube/ci/plantilla-ci.yml</code>. Escribe en cada casilla una palabra del banco. Cada palabra se usa una vez.</p>
+  <div class="banco">${['push','ubuntu-latest','actions/checkout@v6','"3.12"','pytest -v','docker build','pruebas'].map(p => `<code>${esc(p)}</code>`).join('')}</div>
+  <pre class="code" id="plantilla"><span class="k">name</span>: Mi primer CI
+
+<span class="c"># 1. ¿Cuándo corre? Cada vez que subo un cambio</span>
+<span class="k">on</span>:
+  <input data-r="push" aria-label="Hueco 1">:
+    <span class="k">paths</span>:
+      - "clases/clase-04/villa-nube/**"
+
+<span class="k">permissions</span>:
+  <span class="k">contents</span>: read
+
+<span class="k">defaults</span>:
+  <span class="k">run</span>:
+    <span class="k">working-directory</span>: clases/clase-04/villa-nube
+
+<span class="k">jobs</span>:
+  <span class="k">pruebas</span>:
+    <span class="c"># 2. ¿En qué máquina corre? Una Linux que presta GitHub</span>
+    <span class="k">runs-on</span>: <input data-r="ubuntu-latest" aria-label="Hueco 2">
+    <span class="k">steps</span>:
+      <span class="c"># 3. Primero hay que descargar el código</span>
+      - <span class="k">uses</span>: <input data-r="actions/checkout@v6" aria-label="Hueco 3">
+
+      <span class="c"># 4. ¿Qué versión de Python instalamos?</span>
+      - <span class="k">uses</span>: actions/setup-python@v6
+        <span class="k">with</span>:
+          <span class="k">python-version</span>: <input data-r='"3.12"' aria-label="Hueco 4">
+
+      - <span class="k">run</span>: pip install -r app/requirements.txt -r requirements-dev.txt
+
+      <span class="c"># 5. ¿Qué comando corre las pruebas?</span>
+      - <span class="k">run</span>: <input data-r="pytest -v" aria-label="Hueco 5">
+
+  <span class="k">imagen</span>:
+    <span class="c"># 6. Este job espera a que otro termine en verde. ¿Cuál?</span>
+    <span class="k">needs</span>: <input data-r="pruebas" aria-label="Hueco 6">
+    <span class="k">runs-on</span>: ubuntu-latest
+    <span class="k">steps</span>:
+      - <span class="k">uses</span>: actions/checkout@v6
+
+      <span class="c"># 7. ¿Qué comando construye la imagen?</span>
+      - <span class="k">run</span>: <input data-r="docker build" aria-label="Hueco 7"> -t villa-nube/tramites:${esc(SHA)} .</pre>
+  <div class="acciones"><button class="btn prim" id="comprobar">Comprobar</button><button class="btn" id="rellenar">Mostrar la solución</button><span id="resultado"></span></div>` },
+
+{ g: 'Ejercicio 4 · Completa el workflow', t: 'Pruébalo en tu fork', k: ['Ejercicio 4', 'Paso 2 de 2'], h: `
+  <div class="dos"><div>
+    <ol class="instr">
+      <li>En tu fork: ${b('Add file')} → ${b('Create new file')}.</li>
+      <li>Nombre: <code>.github/workflows/mi-ci.yml</code> (en la raíz, no dentro de la carpeta de la clase).</li>
+      <li>Pega tu versión completa y haz commit.</li>
+      <li>Cambia cualquier archivo de <code>clases/clase-04/villa-nube/</code> (por ejemplo, una línea del README) para dispararlo.</li>
+    </ol>
+    ${ver(['<b>Mi primer CI</b> aparece en Actions y termina en verde.'])}
+    <div class="alerta"><b>«Invalid workflow file»</b> casi siempre es la sangría: solo espacios, nunca tabuladores, y los mismos espacios que la plantilla.</div>
+  </div><div>
+    ${navegador('…/actions', 'Actions', `
+      <div class="lado"><div class="lista"><div>All workflows</div><div>Clase 4 · Villa Nube CI</div><div class="on">Mi primer CI</div></div>
+      <div>${fila('ok', '<b>Update README.md</b>', 'Mi primer CI #1 · main · 1 min 20 s')}</div></div>`)}
+    <h2>Dos preguntas para el equipo</h2>
+    <ol class="instr"><li>¿Por qué el job <code>imagen</code> tiene <code>needs: pruebas</code>?</li><li>¿Por qué la etiqueta es <code>${esc(SHA)}</code> y no <code>latest</code>?</li></ol>
+    ${resp('Ver respuesta', `<ol><li>Para no construir una imagen de un código que ya sabemos roto: si las pruebas fallan, la imagen se omite y el rojo llega antes.</li>
+      <li>El sha es el código exacto del commit: cada imagen dice de qué cambio salió y volver atrás es pedir la etiqueta anterior. <code>latest</code> se mueve y no dice nada.</li></ol>`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 5 · Entorno o comportamiento', t: '¿Entorno o comportamiento?', k: ['Ejercicio 5', 'Votación', '4 min'], fn: 'votos', h: `
+  <p>Vota en cada log: <b>E</b> si faltaba algo para poder correr (entorno) o <b>C</b> si la aplicación corrió pero hizo algo distinto de lo esperado (comportamiento).</p>
+  <div class="tarjetas">
+    ${[
+      ['1', 'FAILED test_documento_vencido_se_rechaza\n- assert 201 == 422', 'C', 'La app corrió y respondió 201 donde la regla exige 422.'],
+      ['2', 'pytest: command not found\nError: exit code 127', 'E', 'Se borró el paso «Instalar las librerías»: el comando no existe.'],
+      ['3', "ModuleNotFoundError:\nNo module named 'flask'", 'E', 'Falta Flask en requirements.txt.'],
+      ['4', '✘ /salud → 000\nListening at: http://127.0.0.1:8080', 'E', 'La app arrancó, pero escucha solo dentro del contenedor: nadie la alcanza. 000 significa «no hubo conexión».'],
+    ].map(([n, l, r, por]) => `<div class="tarjeta" data-r="${r}" data-por="${esc(por)}"><b>Log ${n}</b><pre>${esc(l)}</pre>
+      <div class="votos"><button class="btn" data-v="E">E · entorno</button><button class="btn" data-v="C">C · comportamiento</button></div><div class="fb"></div></div>`).join('')}
+  </div>
+  <h2>Cómo leer un log rojo, en tres pasos</h2>
+  <ol class="instr"><li>Busca el <b>primer</b> paso con ✕: los de después suelen fallar por culpa de ese.</li><li>Dentro del paso, busca <code>Error</code>, <code>FAILED</code> o <code>E </code>.</li><li>¿Faltaba algo para correr (entorno) o corrió y respondió distinto (comportamiento)?</li></ol>
+  <div class="nota">Los logs completos están en <code>villa-nube/ci/logs/</code>.</div>` },
+
+{ g: 'Ejercicio 6 · Predice antes de ver', t: 'Verde y rojo: predice', k: ['Ejercicio 6', 'Individual', '6 min'], h: `
+  <p>Escribe tu predicción <b>antes</b> de abrir cada respuesta. Equivocarse es parte del ejercicio.</p>
+  ${[
+    ['Si el job «Pruebas del código» falla, ¿corre «Imagen y prueba de humo»?', '<b>No.</b> Se omite por <code>needs: pruebas</code>.'],
+    ['Cambio <code>run: pytest -v</code> por <code>run: pytest -v || true</code> y rompo la regla. ¿De qué color queda?', '<b>Verde, y engaña.</b> El log dice <code>1 failed</code>, pero <code>|| true</code> hace que el paso termine en 0. La prueba de humo también pasa: usa un documento de 2020, que sigue vencido aun con 900 días.' + log('5-verde-enganoso.txt', `
++ ✓ Correr las pruebas
+  Run pytest -v || true
+R FAILED test_documento_vencido_se_rechaza - assert 201 == 422
+  ============= 1 failed, 4 passed in 0.13s =============
++ ✓ Complete job          ← verde de todas formas`)],
+    ['Cambio solo el README de la raíz del repositorio. ¿Corre el workflow de Villa Nube?', '<b>No.</b> El filtro <code>paths</code> solo mira <code>clases/clase-04/villa-nube/**</code> y el propio workflow.'],
+    ['El workflow quedó en verde. ¿Villa Nube ya está publicada en internet?', '<b>No.</b> La imagen se construyó y se probó en el runner, que se borra al terminar. Publicar y desplegar llega en las clases siguientes.'],
+  ].map(([p, r]) => `<div class="tarjeta" style="margin-top:.8rem"><b>${p}</b>${resp('Ver lo que pasa', r)}</div>`).join('')}
+  <div class="nota"><b>Regla corta:</b> un check verde solo garantiza lo que realmente se probó. Si un paso no corre o su error se ignora, el verde no dice nada de eso.</div>` },
+
+{ g: 'Ejercicio 6 · Predice antes de ver', t: '¿Dónde vive cada dato?', k: ['Ejercicio 6', 'Continuación'], h: `
+  <div class="dos"><div>
+    <table><tr><th>Dato</th><th>¿Dónde va?</th></tr>
+      <tr><td>La clave de la base de datos de producción</td><td></td></tr>
+      <tr><td>El número de días de vigencia del documento</td><td></td></tr>
+      <tr><td>La clave de tu base de datos local para practicar</td><td></td></tr></table>
+    <p>Opciones: <b>secreto de GitHub</b> · <b>variable de GitHub</b> · <b>archivo <code>.env</code> en tu equipo</b>.</p>
+    ${resp('Ver respuesta', `<table>
+      <tr><td>Clave de producción</td><td><b>Secreto</b>: es sensible, GitHub la tapa con <code>***</code> en el log</td></tr>
+      <tr><td>Días de vigencia</td><td><b>Variable</b>: no es sensible, pero puede cambiar sin tocar el código</td></tr>
+      <tr><td>Clave local</td><td><b><code>.env</code></b>: solo existe en tu equipo y nunca se sube a Git</td></tr></table>`)}
+  </div><div>
+    ${navegador('…/settings/secrets/actions', 'Settings', `
+      <b>Actions secrets and variables</b>
+      <div class="tabs" style="padding-left:0;margin:.5rem 0"><span class="on">Secrets</span><span>Variables</span></div>
+      ${fila('', '<code>DB_PASSWORD_PRODUCCION</code>', 'Updated now · el valor nunca se vuelve a mostrar')}
+      <div style="text-align:right;margin-top:.6rem"><span class="boton-gh verde">New repository secret</span></div>`)}
+    <div class="nota" style="margin-top:.8rem"><b>Regla corta:</b> lo sensible, en un secreto; lo que cambia sin ser sensible, en una variable; lo tuyo, en tu <code>.env</code>. Si un secreto aparece en un log por error, hay que cambiarlo.</div>
+  </div></div>` },
+
+{ g: 'Ejercicio 7 · Tu proyecto', t: 'Elige tu proyecto y tu plantilla', k: ['Ejercicio 7', 'Pasos 0 a 2', 'Individual', '45 min'], h: `
+  <p>Ahora lo haces en tu proyecto. Este recorrido usa <b>Mercado Raíces</b>, uno de los proyectos de práctica; si tienes el tuyo, haz lo mismo con tus valores.</p>
+  <table><tr><th>Tu proyecto…</th><th>Carpeta</th><th>Usa</th></tr>
+    <tr><td>Mercado Raíces · Python · Flask</td><td><code>proyectos/mercado-raices</code></td><td><code>ci-python.yml</code></td></tr>
+    <tr><td>BiciBarrio · Node.js · Express</td><td><code>proyectos/bici-barrio</code></td><td><code>ci-node.yml</code></td></tr>
+    <tr><td>Biblioteca La Esquina · sitio estático</td><td><code>proyectos/biblioteca-barrio</code></td><td><code>ci-docker.yml</code></td></tr>
+    <tr><td>El tuyo: tiene Dockerfile, sin pruebas automáticas</td><td><code>.</code></td><td><code>ci-docker.yml</code></td></tr>
+    <tr><td>El tuyo: todavía sin Dockerfile</td><td colspan="2">Hoy usa un proyecto de práctica y deja tu Dockerfile como pendiente</td></tr></table>
+  <ol class="instr">
+    <li>Las plantillas están en <code>clases/clase-04/villa-nube/ci/plantillas/</code>.</li>
+    <li>${b('Add file')} → ${b('Create new file')} → nombre <code>.github/workflows/mercado-raices.yml</code> (en tu propio repositorio: <code>.github/workflows/ci.yml</code>) → pega la plantilla.</li>
+  </ol>
+  <div class="nota">Usar un proyecto de práctica es válido: lo que se evalúa es lo que haces con él. Escríbelo en tu evidencia.</div>` },
+
+{ g: 'Ejercicio 7 · Tu proyecto', t: 'Cambia lo que dice CAMBIA', k: ['Ejercicio 7', 'Paso 3'], h: `
+  <div class="dos"><div>
+    <table><tr><th>CAMBIA</th><th>Mercado Raíces</th></tr>
+      <tr><td><code>working-directory</code></td><td><code>"proyectos/mercado-raices"</code></td></tr>
+      <tr><td><code>PUERTO_APP</code></td><td><code>"8080"</code></td></tr>
+      <tr><td>Prueba 1</td><td>Si abro <code>/productos</code>, debo ver «Papa criolla»</td></tr></table>
+    <div class="nota">Los valores de cada proyecto de práctica están en su README, en la sección «Integración continua en tu fork».</div>
+  </div><div>
+    ${codigo(`
+defaults:
+  run:
+-     working-directory: "."
++     working-directory: "proyectos/mercado-raices"
+
+env:
+  PUERTO_APP: "8080"
+...
+- - name: "Prueba 1 · CAMBIA: escribe aquí tu frase"
++ - name: "Prueba 1 · Si abro /productos, debo ver Papa criolla"
+    run: |
+-     curl -s http://localhost:9000/ | tee respuesta.txt
+-     grep -q "TEXTO QUE DEBES VER" respuesta.txt
++     curl -s http://localhost:9000/productos | tee respuesta.txt
++     grep -q "Papa criolla" respuesta.txt`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 7 · Tu proyecto', t: 'Verde, y luego un rojo a propósito', k: ['Ejercicio 7', 'Pasos 4 y 5'], h: `
+  <div class="dos"><div>
+    <ol class="instr">
+      <li>Haz commit y mira Actions: debe quedar en verde. Si queda en rojo, usa los tres pasos del ejercicio 5.</li>
+      <li>Provoca un rojo: en <code>proyectos/mercado-raices/app/app.py</code> cambia <code>"20000"</code> por <code>"2000"</code>.</li>
+      <li>Mira el rojo y deshaz el cambio.</li>
+    </ol>
+    ${codigo(`
+- PEDIDO_MINIMO = int(os.getenv("PEDIDO_MINIMO", "20000"))
++ PEDIDO_MINIMO = int(os.getenv("PEDIDO_MINIMO", "2000"))`)}
+    ${resp('¿Qué prueba falla?', '<code>test_pedido_minimo</code>: el pedido de una sola cebolla (2.500 pesos) ya supera el mínimo, así que se crea (201) en lugar de rechazarse (422). El job de la imagen se omite.')}
+    ${ver(['Tengo el enlace de una ejecución roja y de una verde de mi proyecto.'])}
+  </div><div>
+    ${log('CI › Pruebas del código › pytest -v', `
+  test_salud PASSED                          [ 16%]
+  test_lista_productos PASSED                [ 33%]
+  test_pedido_valido PASSED                  [ 50%]
+R test_pedido_minimo FAILED                  [ 66%]
+  test_producto_desconocido PASSED           [ 83%]
+  test_sin_stock PASSED                      [100%]
+R E       assert 201 == 422
+! ============== 1 failed, 5 passed ==============
+! Error: Process completed with exit code 1.`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 7 · Tu proyecto', t: 'Escribe «Cómo se valida» en tu README', k: ['Ejercicio 7', 'Paso 6'], h: `
+  <div class="dos"><div>
+    <p>Esta sección le dice a cualquier persona qué protege tu workflow y qué no. Con un proyecto de práctica, escríbela en el README de la carpeta del proyecto.</p>
+    <div class="alerta"><b>Minuto 35.</b> Asegúrate de tener la ejecución roja y la verde: en 10 minutos otra persona va a revisar tu workflow.</div>
+  </div><div>
+    ${codigo(`
+## Cómo se valida
+
+Cada vez que se sube un cambio, GitHub Actions corre
+el workflow .github/workflows/mercado-raices.yml:
+
+1. Corre las 6 pruebas del código con pytest
+   (salud, productos, pedido válido, pedido mínimo,
+   producto desconocido, sin existencias).
+2. Construye la imagen, la enciende y comprueba:
+   «Si abro /productos, debo ver Papa criolla».
+
+Si algo falla, el check queda en rojo y el cambio
+no se considera listo.
+
+Lo que todavía NO se valida: que los pedidos
+sobrevivan a un reinicio, el despliegue y la seguridad.`)}
+  </div></div>` },
+
+{ g: 'Ejercicio 8 · Qué te protege', t: '¿Qué te protege? Revisión en parejas', k: ['Ejercicio 8', 'Parejas', '25 min'], h: `
+  <div class="flujo">
+    <div class="caja"><b>1 · A comparte</b><small>repo y última ejecución verde, sin explicar nada</small></div><span class="flecha">→</span>
+    <div class="caja"><b>2 · B lee</b><small>el workflow y el log, y llena la tabla</small></div><span class="flecha">→</span>
+    <div class="caja bad"><b>3 · A rompe en vivo</b><small>¿queda en rojo?</small></div><span class="flecha">→</span>
+    <div class="caja"><b>4 · Intercambian</b><small>a los 10 min · 5 min de ajuste</small></div>
+  </div>
+  <table><tr><th>Lo anota B</th><th>Ejemplo con Mercado Raíces</th></tr>
+    <tr><td>¿Qué prueba protege este cambio?</td><td><code>test_pedido_minimo</code> y la prueba de humo de <code>/productos</code></td></tr>
+    <tr><td>Si la prueba falla, ¿qué pasa?</td><td>El check queda en rojo, la imagen no se construye y GitHub avisa al autor del commit</td></tr>
+    <tr><td>¿Qué NO está probando?</td><td>Que los pedidos se guarden tras un reinicio; que el servicio esté publicado</td></tr>
+    <tr><td>¿El cambio en vivo quedó en rojo?</td><td>Sí: con <code>"2000"</code> falló <code>test_pedido_minimo</code></td></tr></table>
+  <div class="nota">Si tu workflow está bien, otra persona entiende qué protege sin que se lo expliques.</div>` },
+
+{ g: 'Ejercicio 9 · Cierre', t: 'Exit ticket y preparación para la Clase 5', k: ['Ejercicio 9', 'Individual', '5 min'], h: `
+  <div class="dos"><div>
+    <h2 style="margin-top:0">Responde al profesor</h2>
+    <ol class="instr"><li>En una frase: ¿qué hace tu workflow cada vez que subes un cambio?</li><li>¿Qué parte de tu proyecto todavía se revisa o se configura a mano?</li><li>¿Qué fue lo más difícil hoy?</li></ol>
+  </div><div>
+    ${ver(['Mi workflow y mi sección «Cómo se valida» están en GitHub.', 'Guardé el enlace de una ejecución roja y de una verde.', 'Avancé en el módulo de Platzi de la semana.'])}
+  </div></div>
+  <div class="nota"><b>Para pensar antes de la Clase 5:</b> ¿qué parte de tu infraestructura configuras hoy a mano, con clics, y cómo la describirías en un archivo? En la Clase 5 la infraestructura también se describe en archivos, para revisarla y repetirla igual que el código.</div>
+  <p style="color:var(--muted);font-size:.85rem;margin-top:2rem">Material de apoyo generado con asistencia de IA y revisado por el profesor del curso. Caso ficticio: no uses datos personales reales ni claves de tu trabajo.</p>` },
+];
+
+// ---------- Navegación ----------
+const $ = s => document.querySelector(s);
+const escena = $('#escena'), indice = $('#indice');
+const vistos = new Set();
+let actual = 0, temporizador = null;
+
+function pintarIndice() {
+  let grupo = '', html = '';
+  PASOS.forEach((p, i) => {
+    if (p.g !== grupo) { grupo = p.g; html += `<h3>${grupo}</h3>`; }
+    html += `<a href="#paso-${i + 1}" data-i="${i}"><span class="n">${i + 1}</span><span>${p.t}</span></a>`;
+  });
+  indice.innerHTML = html;
+}
+
+function ir(i) {
+  actual = Math.max(0, Math.min(PASOS.length - 1, i));
+  const p = PASOS[actual];
+  vistos.add(actual);
+  escena.innerHTML = `<article class="paso">
+    <div class="kicker">${p.k.map((c, j) => `<span class="chip ${j === 0 ? 'ej' : ''}">${c}</span>`).join('')}</div>
+    <h1>${p.t}</h1>${p.h}</article>`;
+  escena.scrollTop = 0;
+  $('#contador').textContent = `Paso ${actual + 1} de ${PASOS.length}`;
+  $('#barra').style.width = `${((actual + 1) / PASOS.length) * 100}%`;
+  $('#ant').disabled = actual === 0;
+  $('#sig').textContent = actual === PASOS.length - 1 ? 'Fin ✓' : 'Siguiente →';
+  $('#sig').disabled = actual === PASOS.length - 1;
+  indice.querySelectorAll('a').forEach(a => {
+    const n = +a.dataset.i;
+    a.classList.toggle('activo', n === actual);
+    a.classList.toggle('visto', vistos.has(n) && n !== actual);
+  });
+  indice.querySelector('a.activo')?.scrollIntoView({ block: 'nearest' });
+  history.replaceState(null, '', `#paso-${actual + 1}`);
+  document.body.classList.remove('ver-menu');
+  clearTimeout(temporizador);
+  if (p.anim === 'corre') animarEjecucion();
+  if (p.fn === 'plantilla') prepararPlantilla();
+  if (p.fn === 'votos') prepararVotos();
+}
+
+function animarEjecucion() {
+  const est = $('#estRun'), t = $('#tRun');
+  if (!est) return;
+  est.className = 'est run'; t.textContent = 'en curso…';
+  temporizador = setTimeout(() => { est.className = 'est ok'; t.textContent = 'terminó en 1 min 46 s'; }, 3500);
+  escena.querySelector('[data-reinicia]')?.addEventListener('click', animarEjecucion);
+}
+
+function prepararPlantilla() {
+  const entradas = [...escena.querySelectorAll('#plantilla input')];
+  const norm = s => s.trim().replace(/\s+/g, ' ').replace(/[“”]/g, '"');
+  $('#comprobar').onclick = () => {
+    let bien = 0, pista = '';
+    entradas.forEach(e => {
+      const ok = norm(e.value) === e.dataset.r;
+      e.className = ok ? 'bien' : 'mal';
+      if (ok) bien++;
+      if (!ok && norm(e.value) === '3.12') pista = ' Pista: la versión de Python va entre comillas, "3.12".';
+    });
+    $('#resultado').textContent = bien === entradas.length
+      ? '¡Completo! Ahora pruébalo en tu fork (siguiente paso).'
+      : `${bien} de ${entradas.length} bien.${pista}`;
+  };
+  $('#rellenar').onclick = () => { entradas.forEach(e => { e.value = e.dataset.r; e.className = 'bien'; }); $('#resultado').textContent = 'Esta es la solución.'; };
+}
+
+function prepararVotos() {
+  escena.querySelectorAll('.tarjeta[data-r]').forEach(t => {
+    t.querySelectorAll('button[data-v]').forEach(btn => btn.onclick = () => {
+      const ok = btn.dataset.v === t.dataset.r;
+      t.className = 'tarjeta ' + (ok ? 'ok' : 'no');
+      t.querySelector('.fb').innerHTML = (ok ? '✓ <b>Correcto.</b> ' : `✕ Es <b>${t.dataset.r}</b>. `) + t.dataset.por;
+    });
+  });
+}
+
+// Casillas «Debes ver»: se marcan con un clic
+escena.addEventListener('click', e => { const li = e.target.closest('.ver li'); if (li) li.classList.toggle('hecho'); });
+indice.addEventListener('click', e => { const a = e.target.closest('a[data-i]'); if (a) { e.preventDefault(); ir(+a.dataset.i); } });
+$('#ant').onclick = () => ir(actual - 1);
+$('#sig').onclick = () => ir(actual + 1);
+$('#btnMenu').onclick = () => document.body.classList.toggle('ver-menu');
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea')) return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') ir(actual + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') ir(actual - 1);
+});
+
+pintarIndice();
+const inicio = parseInt((location.hash.match(/paso-(\d+)/) || [])[1], 10);
+ir(Number.isFinite(inicio) ? inicio - 1 : 0);
+</script>
+</body>
+</html>
