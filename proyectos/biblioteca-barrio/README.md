@@ -57,3 +57,17 @@ Usa `clases/clase-04/villa-nube/ci/plantillas/ci-docker.yml` y guárdalo como
 - No sabemos cuántas personas lo visitan.
 
 Caso ficticio con fines educativos.
+
+## Cómo se valida
+
+Uso el proyecto de práctica Biblioteca La Esquina del curso.
+
+Cada vez que se sube un cambio, GitHub Actions corre el workflow `.github/workflows/biblioteca-barrio.yml`:
+
+1. Construye la imagen de nginx con el sitio y la enciende.
+2. Prueba 1: «Si abro /, debo ver Biblioteca La Esquina».
+3. Prueba 2: «Si abro /libros.json, debo ver Cien años de soledad».
+
+Si algo falla, el check queda en rojo y el cambio no se considera listo.
+
+Lo que todavía NO se valida: que el buscador filtre bien (curl no ejecuta JavaScript), que los prestados se marquen como «Prestado» y que el sitio esté publicado en internet.
